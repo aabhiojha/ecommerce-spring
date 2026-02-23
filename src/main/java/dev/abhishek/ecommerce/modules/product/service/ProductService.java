@@ -1,10 +1,12 @@
 package dev.abhishek.ecommerce.modules.product.service;
 
-import dev.abhishek.ecommerce.dtos.product.AddProductRequest;
 import dev.abhishek.ecommerce.common.exceptions.ProductNotFoundException;
 import dev.abhishek.ecommerce.modules.category.entity.Category;
+import dev.abhishek.ecommerce.modules.product.dto.CreateProductRequest;
+import dev.abhishek.ecommerce.modules.product.dto.ProductDto;
 import dev.abhishek.ecommerce.modules.product.entity.Product;
 import dev.abhishek.ecommerce.modules.category.repository.CategoryRepository;
+import dev.abhishek.ecommerce.modules.product.mapper.ProductMapper;
 import dev.abhishek.ecommerce.modules.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,26 +24,18 @@ public class ProductService implements IProductService {
 
     @Override
     @Transactional
-    public Product addProduct(AddProductRequest product) {
-        Category category = product.getCategory();
-        Optional<Category> byId = categoryRepository.findById(product.getCategory().getId());
-        if (byId.isEmpty()) {
-            categoryRepository.save(category);
-        }
-        Product product1 = createProduct(product, category);
-        return productRepository.save(product1);
+    public ProductDto addProduct(CreateProductRequest product) {
+        System.out.println("The create request object :"+ product);
+        int categoryId = product.getCategory_id();
+        Optional<Category> byId = categoryRepository.findById((long) categoryId);
+        System.out.println("The category object: " + byId.get());
+        Product entity = ProductMapper.toEntity(product, byId.get());
+        // create product entry
+        Product save = productRepository.save(entity);
+        System.out.println("The product object: "+ save);
+        return ProductMapper.toDto(save);
     }
 
-    private Product createProduct(AddProductRequest request, Category category) {
-        return new Product(
-                request.getName(),
-                request.getBrand(),
-                request.getPrice(),
-                request.getInventory(),
-                request.getDescription(),
-                category
-        );
-    }
 
     @Override
     public List<Product> getAllProducts() {

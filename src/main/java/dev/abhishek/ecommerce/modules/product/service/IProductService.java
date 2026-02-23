@@ -1,12 +1,13 @@
 package dev.abhishek.ecommerce.modules.product.service;
 
-import dev.abhishek.ecommerce.dtos.product.AddProductRequest;
+import dev.abhishek.ecommerce.modules.product.dto.CreateProductRequest;
+import dev.abhishek.ecommerce.modules.product.dto.ProductDto;
 import dev.abhishek.ecommerce.modules.product.entity.Product;
 
 import java.util.List;
 
 public interface IProductService {
-    Product addProduct(AddProductRequest product);
+    ProductDto addProduct(CreateProductRequest product);
 
     List<Product> getAllProducts();
 
