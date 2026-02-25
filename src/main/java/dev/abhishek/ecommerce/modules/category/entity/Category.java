@@ -1,9 +1,7 @@
 package dev.abhishek.ecommerce.modules.category.entity;
 
 import dev.abhishek.ecommerce.modules.product.entity.Product;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,9 +18,11 @@ import java.util.List;
 public class Category {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotNull
+    @Column(unique = true)
     private String name;
 
     @OneToMany(mappedBy = "category")
