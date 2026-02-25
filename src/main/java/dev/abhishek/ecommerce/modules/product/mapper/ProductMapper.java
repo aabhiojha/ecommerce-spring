@@ -35,6 +35,7 @@ public final class ProductMapper {
         }
 
         return ProductDto.builder()
+                .id(product.getId())
                 .name(product.getName())
                 .brand(product.getBrand())
                 .price(product.getPrice())
@@ -45,15 +46,19 @@ public final class ProductMapper {
     }
 
     public static List<ProductDto> toDtoList(List<Product> products) {
-        if (products == null) return null;
+        if (products == null){
+            return null;
+        }
+
         return products.stream()
                 .filter(Objects::nonNull)
-                .map(ProductMapper::toDto)
+                .map(product  -> toDto(product))
                 .collect(Collectors.toList());
     }
 
     public static Product toEntity(CreateProductRequest request, Category category) {
         if (request == null) return null;
+
         Product product = new Product();
         product.setName(request.getName());
         product.setBrand(request.getBrand());

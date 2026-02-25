@@ -28,5 +28,5 @@ public class UpdateProductRequest {
     @NotNull
     private String description;
 
-    private Integer category_id;
+    private Long category_id;
 }
