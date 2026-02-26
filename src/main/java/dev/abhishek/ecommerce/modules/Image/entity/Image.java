@@ -20,7 +20,11 @@ public class Image {
     private Long id;
     private String fileName;
     private String fileType;
-    private Blob image;
+
+    @Lob
+    @Column(name = "image_data", columnDefinition = "LONGBLOB")
+    private byte[] image;
+
     private String downloadUrl;
 
     @ManyToOne
