@@ -1,16 +1,19 @@
 package dev.abhishek.ecommerce.modules.Image.controller;
 
+import dev.abhishek.ecommerce.modules.Image.dtos.UploadImageDto;
 import dev.abhishek.ecommerce.modules.Image.service.ImageService;
 import dev.abhishek.ecommerce.modules.Image.service.MinioService;
+import io.minio.messages.Upload;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+
 
 @RestController
 @RequiredArgsConstructor
@@ -29,14 +32,21 @@ public class ImageController {
 //        return ResponseEntity.ok().build();
 //    }
 
-    @PostMapping("/upload")
-    public ResponseEntity<String> upload(@RequestParam("file") MultipartFile file) throws Exception {
+    @PostMapping(value = "/upload"
+//            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<String> upload(
+            @RequestPart("file") MultipartFile file,
+            @RequestParam("productId") Long productId
+    ) throws Exception {
 
-        minioService.uploadFile(
-                file.getOriginalFilename(),
-                file.getInputStream(),
-                file.getContentType()
-        );
+        UploadImageDto uploadImageDto = new UploadImageDto();
+        uploadImageDto.setFile(file);
+        uploadImageDto.setProductId(productId);
+
+        // need to set the metadata in the image table as well
+        // and put the image object in minio
+        imageService.uploadImage(uploadImageDto);
 
         return ResponseEntity.ok("Uploaded successfully");
     }
