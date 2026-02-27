@@ -29,7 +29,6 @@ public class ImageService implements IImageService {
 
     @Transactional
     public void uploadImage(UploadImageDto uploadImageDto) throws Exception {
-        Logger log = LoggerFactory.getLogger(ImageService.class);
 
         MultipartFile file = uploadImageDto.getFile();
 
@@ -39,14 +38,14 @@ public class ImageService implements IImageService {
                 file.getInputStream(),
                 file.getContentType()
         );
-        log.info("File uploaded to minio");
+
+        log.debug("File uploaded to minio");
 
         try {
             Product product = productRepository.findById(
                             uploadImageDto.getProductId())
                     .orElseThrow(() ->
                             new ProductNotFoundException("Product not found with id: " + uploadImageDto.getProductId()));
-
             // set the information in image table
             Image entity = ImageMapper.toEntity(uploadImageDto, product, minioService.getFileUrl(file.getOriginalFilename()));
             imageRepository.save(entity);
@@ -58,4 +57,6 @@ public class ImageService implements IImageService {
             log.error(e.getMessage());
         }
     }
+
+
 }

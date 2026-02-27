@@ -20,21 +20,8 @@ import java.io.IOException;
 public class ImageController {
 
     private final ImageService imageService;
-    private final MinioService minioService;
 
-//    @PostMapping("/{productId}/images")
-//    public ResponseEntity<?> uploadImage(
-//            @PathVariable Long productId,
-//            @RequestParam("file") MultipartFile file
-//    ) throws IOException {
-//
-//        imageService.uploadImage(productId, file);
-//        return ResponseEntity.ok().build();
-//    }
-
-    @PostMapping(value = "/upload"
-//            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
+    @PostMapping(value = "/upload")
     public ResponseEntity<String> upload(
             @RequestPart("file") MultipartFile file,
             @RequestParam("productId") Long productId
