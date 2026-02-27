@@ -19,11 +19,11 @@ public abstract class AuditableEntity {
     @Column(nullable = false)
     private LocalDate updatedAt;
 
-//    @CreatedBy
-//    @Column(updatable = false)
-//    private String createdBy;
-//
-//    @LastModifiedBy
-//    private String updatedBy;
+    @CreatedBy
+    @Column(updatable = false)
+    private String createdBy;
+
+    @LastModifiedBy
+    private String updatedBy;
 }
 
