@@ -1,5 +1,7 @@
 package dev.abhishek.ecommerce.modules.product.mapper;
 
+import dev.abhishek.ecommerce.modules.Image.dtos.ImageDto;
+import dev.abhishek.ecommerce.modules.Image.mapper.ImageMapper;
 import dev.abhishek.ecommerce.modules.category.entity.Category;
 import dev.abhishek.ecommerce.modules.product.dto.CreateProductRequest;
 import dev.abhishek.ecommerce.modules.product.dto.ProductDto;
@@ -34,6 +36,10 @@ public final class ProductMapper {
         } catch (Exception ignored) {
         }
 
+        List<ImageDto> imageDtos = product.getImages().stream()
+                .map(image-> ImageMapper.toDto(image))
+                .toList();
+
         return ProductDto.builder()
                 .id(product.getId())
                 .name(product.getName())
@@ -42,6 +48,7 @@ public final class ProductMapper {
                 .inventory(inventory)
                 .description(product.getDescription())
                 .category_id(categoryId)
+                .imageList(imageDtos)
                 .build();
     }
 

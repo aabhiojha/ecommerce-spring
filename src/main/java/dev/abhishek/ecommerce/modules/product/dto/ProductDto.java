@@ -1,5 +1,6 @@
 package dev.abhishek.ecommerce.modules.product.dto;
 
+import dev.abhishek.ecommerce.modules.Image.dtos.ImageDto;
 import dev.abhishek.ecommerce.modules.Image.entity.Image;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.NotNull;
@@ -13,7 +14,6 @@ import java.util.List;
 @Data
 @Builder
 public class ProductDto {
-
     private Long id;
 
     @NotNull
@@ -34,5 +34,5 @@ public class ProductDto {
 
     private Integer category_id;
 
-//    private List<Image> imageList;
+    private List<ImageDto> imageList;
 }
