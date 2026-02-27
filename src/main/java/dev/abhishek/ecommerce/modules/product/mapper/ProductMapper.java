@@ -7,6 +7,7 @@ import dev.abhishek.ecommerce.modules.product.dto.CreateProductRequest;
 import dev.abhishek.ecommerce.modules.product.dto.ProductDto;
 import dev.abhishek.ecommerce.modules.product.dto.UpdateProductRequest;
 import dev.abhishek.ecommerce.modules.product.entity.Product;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Objects;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
  * Mapper utilities for Product <-> DTO conversions.
  * All methods are null-safe and treat missing category as null when converting to DTO.
  */
+@Slf4j
 public final class ProductMapper {
 
     private ProductMapper() {
@@ -36,10 +38,6 @@ public final class ProductMapper {
         } catch (Exception ignored) {
         }
 
-        List<ImageDto> imageDtos = product.getImages().stream()
-                .map(image-> ImageMapper.toDto(image))
-                .toList();
-
         return ProductDto.builder()
                 .id(product.getId())
                 .name(product.getName())
@@ -48,18 +46,25 @@ public final class ProductMapper {
                 .inventory(inventory)
                 .description(product.getDescription())
                 .category_id(categoryId)
-                .imageList(imageDtos)
+                .imageList(mapImages(product))
                 .build();
     }
 
+    public static List<ImageDto> mapImages(Product product) {
+        if (product.getImages() == null) return null;
+        return product.getImages().stream()
+                .map(image -> ImageMapper.toDto(image))
+                .toList();
+    }
+
     public static List<ProductDto> toDtoList(List<Product> products) {
-        if (products == null){
+        if (products == null) {
             return null;
         }
 
         return products.stream()
                 .filter(Objects::nonNull)
-                .map(product  -> toDto(product))
+                .map(product -> toDto(product))
                 .collect(Collectors.toList());
     }
 

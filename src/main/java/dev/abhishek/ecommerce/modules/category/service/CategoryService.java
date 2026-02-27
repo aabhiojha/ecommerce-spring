@@ -6,6 +6,7 @@ import dev.abhishek.ecommerce.modules.category.dtos.CreateCategoryRequest;
 import dev.abhishek.ecommerce.modules.category.entity.Category;
 import dev.abhishek.ecommerce.modules.category.mapper.CategoryMapper;
 import dev.abhishek.ecommerce.modules.category.repository.CategoryRepository;
+import dev.abhishek.ecommerce.modules.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,7 @@ import java.util.List;
 public class CategoryService implements ICategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
 
     @Override
     public void createCategory(CreateCategoryRequest createCategoryRequest) {
@@ -43,5 +45,9 @@ public class CategoryService implements ICategoryService {
     @Override
     public void updateCategoryById(Long id) {
 
+    }
+
+    public void deleteCategory(Long id) {
+        productRepository.deleteById(id);
     }
 }

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -45,9 +46,12 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
 
-        http.authorizeHttpRequests((
-                requests) -> requests
+        http.authorizeHttpRequests((requests) -> requests
                 .requestMatchers("/signin").permitAll()
+                .requestMatchers(HttpMethod.GET,"/api/products").permitAll()
+                .requestMatchers(HttpMethod.GET,"/api/products/**").permitAll()
+                .requestMatchers(HttpMethod.GET,"/api/categories").permitAll()
+
                 .anyRequest().authenticated());
 
         http.sessionManagement(
@@ -79,17 +83,25 @@ public class SecurityConfig {
             JdbcUserDetailsManager manager =
                     (JdbcUserDetailsManager) userDetailsService;
 
-            if (!manager.userExists("user")) {
-                UserDetails user = User.withUsername("user")
+            if (!manager.userExists("customer")) {
+                UserDetails user = User.withUsername("customer")
                         .password(passwordEncoder().encode("password1"))
-                        .roles("USER")
+                        .roles("CUSTOMER")
+                        .build();
+                manager.createUser(user);
+            }
+
+            if (!manager.userExists("seller")) {
+                UserDetails user = User.withUsername("seller")
+                        .password(passwordEncoder().encode("password1"))
+                        .roles("SELLER")
                         .build();
                 manager.createUser(user);
             }
 
             if (!manager.userExists("admin")) {
                 UserDetails admin = User.withUsername("admin")
-                        .password(passwordEncoder().encode("adminPass"))
+                        .password(passwordEncoder().encode("password1"))
                         .roles("ADMIN")
                         .build();
                 manager.createUser(admin);
