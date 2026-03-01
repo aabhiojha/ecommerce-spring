@@ -6,7 +6,8 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 @Builder
 public class ImageDto {
     private Long id;

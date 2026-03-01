@@ -5,10 +5,13 @@ import dev.abhishek.ecommerce.modules.product.entity.Product;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @Builder
 public class CategoryDto {
 
