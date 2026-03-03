@@ -2,15 +2,15 @@ package dev.abhishek.ecommerce.modules.auth.model;
 
 import dev.abhishek.ecommerce.common.AuditableEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Entity
-@Table(name = "Roles")
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Entity
+@Table(name = "roles")
 public class Role extends AuditableEntity {
 
     @Id
@@ -20,4 +20,7 @@ public class Role extends AuditableEntity {
     @Column(nullable = false, unique = true)
     private String name;
 
+    public Role(String name) {
+        this.name = name;
+    }
 }

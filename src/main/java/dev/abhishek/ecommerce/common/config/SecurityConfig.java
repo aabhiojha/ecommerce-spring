@@ -2,6 +2,7 @@ package dev.abhishek.ecommerce.common.config;
 
 import dev.abhishek.ecommerce.common.security.jtw.AuthEntryPointJwt;
 import dev.abhishek.ecommerce.common.security.jtw.AuthTokenFilter;
+import dev.abhishek.ecommerce.modules.user.service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
@@ -38,6 +39,9 @@ public class SecurityConfig {
     @Autowired
     private AuthEntryPointJwt unauthorizedHandler;
 
+    @Autowired
+    private CustomUserDetailsService customUserDetailsService;
+
     @Bean
     public AuthTokenFilter authenticationJwtTokenFilter() {
         return new AuthTokenFilter();
@@ -46,26 +50,30 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
 
-        http.authorizeHttpRequests((requests) -> requests
-                .requestMatchers("/signin").permitAll()
-                .requestMatchers(HttpMethod.GET,"/api/products").permitAll()
-                .requestMatchers(HttpMethod.GET,"/api/products/**").permitAll()
-                .requestMatchers(HttpMethod.GET,"/api/categories").permitAll()
+        http
+                .authorizeHttpRequests((requests) -> requests
+                        .requestMatchers("/signin").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories/**").permitAll()
+                .requestMatchers(HttpMethod.POST,"/api/images").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .anyRequest().authenticated());
 
-                .anyRequest().authenticated());
+        http.userDetailsService(customUserDetailsService);
 
         http.sessionManagement(
                 session ->
                         session.sessionCreationPolicy(
                                 SessionCreationPolicy.STATELESS));
+
         http.exceptionHandling(exception ->
                 exception.authenticationEntryPoint(unauthorizedHandler));
-
-//        http.httpBasic(withDefaults());
 
         http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.sameOrigin()));
 
         http.csrf(csrf -> csrf.disable());
+
         http.addFilterBefore(authenticationJwtTokenFilter(),
                 UsernamePasswordAuthenticationFilter.class);
 
@@ -83,29 +91,29 @@ public class SecurityConfig {
             JdbcUserDetailsManager manager =
                     (JdbcUserDetailsManager) userDetailsService;
 
-            if (!manager.userExists("customer")) {
-                UserDetails user = User.withUsername("customer")
-                        .password(passwordEncoder().encode("password1"))
-                        .roles("CUSTOMER")
-                        .build();
-                manager.createUser(user);
-            }
-
-            if (!manager.userExists("seller")) {
-                UserDetails user = User.withUsername("seller")
-                        .password(passwordEncoder().encode("password1"))
-                        .roles("SELLER")
-                        .build();
-                manager.createUser(user);
-            }
-
-            if (!manager.userExists("admin")) {
-                UserDetails admin = User.withUsername("admin")
-                        .password(passwordEncoder().encode("password1"))
-                        .roles("ADMIN")
-                        .build();
-                manager.createUser(admin);
-            }
+//            if (!manager.userExists("customer")) {
+//                UserDetails user = User.withUsername("customer")
+//                        .password(passwordEncoder().encode("password1"))
+//                        .roles("CUSTOMER")
+//                        .build();
+//                manager.createUser(user);
+//            }
+//
+//            if (!manager.userExists("seller")) {
+//                UserDetails user = User.withUsername("seller")
+//                        .password(passwordEncoder().encode("password1"))
+//                        .roles("SELLER")
+//                        .build();
+//                manager.createUser(user);
+//            }
+//
+//            if (!manager.userExists("admin")) {
+//                UserDetails admin = User.withUsername("admin")
+//                        .password(passwordEncoder().encode("password1"))
+//                        .roles("ADMIN")
+//                        .build();
+//                manager.createUser(admin);
+//            }
         };
     }
 

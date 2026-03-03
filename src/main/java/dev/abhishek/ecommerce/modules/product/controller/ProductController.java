@@ -32,7 +32,7 @@ public class ProductController {
         return new ResponseEntity<>(allProducts, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAnyRole('SELLER')")
+//    @PreAuthorize("hasRole('SELLER')")
     @PostMapping
     public ResponseEntity<ProductDto> createProduct(@Valid @RequestBody CreateProductRequest createProductRequest) {
         try {

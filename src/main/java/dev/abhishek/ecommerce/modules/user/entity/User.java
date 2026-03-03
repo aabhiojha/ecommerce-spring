@@ -5,14 +5,14 @@ import dev.abhishek.ecommerce.modules.auth.model.Role;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+@Getter
+@Setter
 @Entity
 @Table(name = "users")
 @Builder
@@ -21,7 +21,7 @@ import java.util.List;
 public class User extends AuditableEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer userId;
+    private Long id;
 
     @NotNull(message = "Username is required")
     @Column(name = "user_name", updatable = false, unique = true)
