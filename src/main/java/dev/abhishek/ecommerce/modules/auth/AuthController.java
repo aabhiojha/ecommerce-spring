@@ -1,81 +1,29 @@
 package dev.abhishek.ecommerce.modules.auth;
 
-import dev.abhishek.ecommerce.common.security.authDTO.LoginRequest;
-import dev.abhishek.ecommerce.common.security.authDTO.LoginResponse;
-import dev.abhishek.ecommerce.common.security.jtw.JwtUtils;
-import dev.abhishek.ecommerce.modules.auth.model.Role;
+import dev.abhishek.ecommerce.modules.auth.authDTO.AuthRequest;
+import dev.abhishek.ecommerce.modules.auth.authDTO.RegisterRequest;
+import dev.abhishek.ecommerce.modules.auth.authDTO.AuthResponse;
+import dev.abhishek.ecommerce.modules.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-@RequiredArgsConstructor
 @RestController
+@RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
-    @Autowired
-    private JwtUtils jwtUtils;
+    private final AuthService authService;
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
-
-    @PreAuthorize("hasAnyRole('CUSTOMER', 'SELLER', 'ADMIN')")
-    @GetMapping("/hello")
-    public String sayHello() {
-        return "hello";
+    @PostMapping("/register")
+    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
+        // Register new user and return JWT
+        return ResponseEntity.ok(authService.register(request));
     }
 
-    @PostMapping("/signin")
-    public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
-        Authentication authentication;
-
-        try {
-            authentication = authenticationManager
-                    .authenticate(new UsernamePasswordAuthenticationToken(
-                            loginRequest.getUsername(),
-                            loginRequest.getPassword())
-                    );
-        } catch (AuthenticationException exception) {
-            Map<String, Object> map = new HashMap<>();
-            map.put("message", "Bad credentials");
-            map.put("status", false);
-            return new ResponseEntity<Object>(map, HttpStatus.NOT_FOUND);
-        }
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        String jwtToken = jwtUtils.generateTokenFromUsername(userDetails);
-        List<String> roles = userDetails.getAuthorities()
-                .stream()
-                .map(item -> item.getAuthority())
-                .collect(Collectors.toList());
-
-        LoginResponse response = new LoginResponse(jwtToken, userDetails.getUsername(), roles);
-        return ResponseEntity.ok(response);
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> authenticate(@RequestBody AuthRequest request) {
+        // Authenticate and return JWT
+        return ResponseEntity.ok(authService.authenticate(request));
     }
-
-//    @PreAuthorize("hasRole('ADMIN')")
-//    @GetMapping
-//    public ResponseEntity<List<Role>> getAllRoles() {
-//        List<Role> allRoles = authService.getAllRoles();
-//        return new ResponseEntity<>(allRoles, HttpStatus.OK);
-//    }
-
-
 }

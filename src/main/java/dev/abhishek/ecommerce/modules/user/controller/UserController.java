@@ -1,8 +1,8 @@
 package dev.abhishek.ecommerce.modules.user.controller;
 
-import dev.abhishek.ecommerce.modules.user.entity.User;
 import dev.abhishek.ecommerce.modules.user.repository.UserRepository;
 import dev.abhishek.ecommerce.modules.user.service.UserService;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,6 +25,5 @@ public class UserController {
 
     @PostMapping("/create")
     public void createUser(@RequestBody User user){
-        userService.createUser(user);
     }
 }

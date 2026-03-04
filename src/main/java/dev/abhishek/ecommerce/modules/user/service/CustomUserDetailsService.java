@@ -1,7 +1,5 @@
 package dev.abhishek.ecommerce.modules.user.service;
 
-import dev.abhishek.ecommerce.modules.user.CustomUserDetails;
-import dev.abhishek.ecommerce.modules.user.entity.User;
 import dev.abhishek.ecommerce.modules.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;

@@ -1,12 +1,13 @@
-package dev.abhishek.ecommerce.common.security.authDTO;
+package dev.abhishek.ecommerce.modules.auth.authDTO;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 @Setter
 @Getter
-public class LoginRequest {
+@Builder
+public class RegisterRequest {
     private String username;
     private String password;
-
 }
