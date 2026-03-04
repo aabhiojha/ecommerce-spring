@@ -41,7 +41,7 @@ public class ImageController {
         return ResponseEntity.ok("Uploaded successfully");
     }
 
-//    @PreAuthorize("hasRole('SELLER')")
+    @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
     @GetMapping
     public ResponseEntity<List<ImageDto>> getAllImages() {
         List<Image> all = imageRepository.findAll();

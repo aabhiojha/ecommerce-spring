@@ -3,6 +3,7 @@ package dev.abhishek.ecommerce.modules.auth;
 import dev.abhishek.ecommerce.common.security.authDTO.LoginRequest;
 import dev.abhishek.ecommerce.common.security.authDTO.LoginResponse;
 import dev.abhishek.ecommerce.common.security.jtw.JwtUtils;
+import dev.abhishek.ecommerce.modules.auth.model.Role;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -34,7 +35,7 @@ public class AuthController {
     @Autowired
     private AuthenticationManager authenticationManager;
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'SELLER', 'ADMIN')")
     @GetMapping("/hello")
     public String sayHello() {
         return "hello";
@@ -67,8 +68,14 @@ public class AuthController {
 
         LoginResponse response = new LoginResponse(jwtToken, userDetails.getUsername(), roles);
         return ResponseEntity.ok(response);
-
     }
+
+//    @PreAuthorize("hasRole('ADMIN')")
+//    @GetMapping
+//    public ResponseEntity<List<Role>> getAllRoles() {
+//        List<Role> allRoles = authService.getAllRoles();
+//        return new ResponseEntity<>(allRoles, HttpStatus.OK);
+//    }
 
 
 }

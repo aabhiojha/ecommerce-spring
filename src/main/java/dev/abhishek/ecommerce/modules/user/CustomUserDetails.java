@@ -23,8 +23,12 @@ public class CustomUserDetails implements UserDetails {
         this.password = user.getPassword();
         this.enabled = user.getEnabled();
         this.authorities = user.getRoles().stream()
-                .map(r -> new SimpleGrantedAuthority(r.getName()))
+                .map(r -> new SimpleGrantedAuthority(normalizeRoleName(r.getName())))
                 .toList();
+    }
+
+    private String normalizeRoleName(String roleName) {
+        return roleName.startsWith("ROLE_") ? roleName : "ROLE_" + roleName;
     }
 
     @Override
