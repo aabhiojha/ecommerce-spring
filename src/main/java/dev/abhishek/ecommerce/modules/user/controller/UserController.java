@@ -1,8 +1,8 @@
 package dev.abhishek.ecommerce.modules.user.controller;
 
+import dev.abhishek.ecommerce.modules.user.model.User;
 import dev.abhishek.ecommerce.modules.user.repository.UserRepository;
 import dev.abhishek.ecommerce.modules.user.service.UserService;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,13 +17,14 @@ public class UserController {
         this.userRepository = userRepository;
         this.userService = userService;
     }
-
+    
     @GetMapping
-    public List<User> getAllUsers(){
+    public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
     @PostMapping("/create")
-    public void createUser(@RequestBody User user){
+    public User createUser(@RequestBody User user) {
+        return userRepository.save(user);
     }
 }

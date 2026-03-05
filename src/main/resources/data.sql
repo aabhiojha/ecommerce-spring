@@ -7,9 +7,9 @@ VALUES (name);
 
 -- bcrypt hash below is for password: password
 INSERT INTO users (user_name, password, email, enabled)
-VALUES ('customer1', '$2a$10$7EqJtq98hPqEX7fNZaFWoOePaWxn96p36nA3i4s1ihQ6p0QxP4mGa', 'customer1@example.com', 1),
-       ('seller1', '$2a$10$7EqJtq98hPqEX7fNZaFWoOePaWxn96p36nA3i4s1ihQ6p0QxP4mGa', 'seller1@example.com', 1),
-       ('admin1', '$2a$10$7EqJtq98hPqEX7fNZaFWoOePaWxn96p36nA3i4s1ihQ6p0QxP4mGa', 'admin1@example.com',
+VALUES ('customer1', '$2a$10$kZCyMLLHZ3nOk/RXsXNvsOJzU1jOqab4/Et0SY/T6uUVwI9llFivW', 'customer1@example.com', 1),
+       ('seller1', '$2a$10$kZCyMLLHZ3nOk/RXsXNvsOJzU1jOqab4/Et0SY/T6uUVwI9llFivW', 'seller1@example.com', 1),
+       ('admin1', '$2a$10$kZCyMLLHZ3nOk/RXsXNvsOJzU1jOqab4/Et0SY/T6uUVwI9llFivW', 'admin1@example.com',
         1) ON DUPLICATE KEY
 UPDATE
     password =
