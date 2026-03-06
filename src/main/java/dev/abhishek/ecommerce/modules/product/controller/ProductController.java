@@ -2,7 +2,6 @@ package dev.abhishek.ecommerce.modules.product.controller;
 
 import dev.abhishek.ecommerce.modules.product.dto.CreateProductRequest;
 import dev.abhishek.ecommerce.modules.product.dto.ProductDto;
-import dev.abhishek.ecommerce.modules.product.entity.Product;
 import dev.abhishek.ecommerce.modules.product.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
