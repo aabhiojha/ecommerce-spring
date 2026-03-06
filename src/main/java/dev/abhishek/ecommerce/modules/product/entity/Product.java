@@ -3,6 +3,7 @@ package dev.abhishek.ecommerce.modules.product.entity;
 import dev.abhishek.ecommerce.modules.cart.entity.CartItems;
 import dev.abhishek.ecommerce.modules.category.entity.Category;
 import dev.abhishek.ecommerce.modules.Image.entity.Image;
+import dev.abhishek.ecommerce.modules.order.entity.OrderItems;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -38,14 +39,14 @@ public class Product {
     @Column(length = 1000)
     private String description;
 
-    @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "category_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Image> images;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "product")
     private List<CartItems> cartItems = new ArrayList<>();
 
     @CreationTimestamp

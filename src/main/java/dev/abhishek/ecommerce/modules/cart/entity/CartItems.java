@@ -7,7 +7,12 @@ import lombok.*;
 import java.util.Date;
 
 @Entity
-@Table(name = "cart_items")
+@Table(
+        name = "cart_items",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_cart_items_cart_product", columnNames = {"cart_id", "product_id"}
+        )
+)
 @Getter
 @Setter
 @Builder
@@ -29,8 +34,4 @@ public class CartItems {
 
     @Column(nullable = false)
     private Long quantity;
-
-
-
-    private Date added_at;
 }
