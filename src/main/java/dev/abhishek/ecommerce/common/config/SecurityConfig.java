@@ -1,6 +1,7 @@
 package dev.abhishek.ecommerce.common.config;
 
 import dev.abhishek.ecommerce.common.security.jtw.AuthEntryPointJwt;
+import dev.abhishek.ecommerce.common.security.jtw.AccessDeniedHandlerJwt;
 import dev.abhishek.ecommerce.common.security.jtw.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -30,6 +31,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
     private final AuthEntryPointJwt unauthorizedHandler;
+    private final AccessDeniedHandlerJwt accessDeniedHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -54,7 +56,10 @@ public class SecurityConfig {
 
                 // Return JSON 401 responses for unauthorized requests
                 .exceptionHandling(exception ->
-                        exception.authenticationEntryPoint(unauthorizedHandler))
+                        exception
+                                .authenticationEntryPoint(unauthorizedHandler)
+                                .accessDeniedHandler(accessDeniedHandler)
+                )
 
                 // stateless session - no server side session storage
                 .sessionManagement(
@@ -66,13 +71,13 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
 
                 // Add JWT filter before the standard authentication filter
-                .addFilterBefore(jwtAuthFilter,UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider(){
+    public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
@@ -80,12 +85,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception{
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder(){
+    public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
