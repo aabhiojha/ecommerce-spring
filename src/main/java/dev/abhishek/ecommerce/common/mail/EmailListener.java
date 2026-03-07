@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class EmailListener {
     private final EmailServiceImpl mailService;
+    private final EmailService emailService;
 
     @EventListener
     public void handleUserRegistered(UserRegisteredEvent event) throws MessagingException {
@@ -24,11 +25,11 @@ public class EmailListener {
     }
 
     @EventListener
-    public void handlePasswordReset(PasswordResetEvent event){
-        String subject = "Password reset code";
-        String body = "Your password reset code is: " + event.token() + "\n"
-                + "This code expires in 30 minutes.";
-        mailService.sendPlainText(event.email(), subject, body);
+    public void handlePasswordReset(PasswordResetEvent event) throws MessagingException {
+
+        String email = event.email();
+
+        mailService.sendHtml(email, "Password update request OTP", "password-reset.html");
         log.debug("Password reset code sent to {}", event.email());
     }
 

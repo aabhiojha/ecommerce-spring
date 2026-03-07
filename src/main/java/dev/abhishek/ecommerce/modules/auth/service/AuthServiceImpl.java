@@ -2,6 +2,7 @@ package dev.abhishek.ecommerce.modules.auth.service;
 
 import dev.abhishek.ecommerce.common.security.jtw.JwtService;
 import dev.abhishek.ecommerce.modules.auth.authDTO.*;
+import dev.abhishek.ecommerce.modules.auth.event.PasswordResetConfirmEvent;
 import dev.abhishek.ecommerce.modules.auth.event.PasswordResetEvent;
 import dev.abhishek.ecommerce.modules.auth.event.UserRegisteredEvent;
 import dev.abhishek.ecommerce.modules.auth.model.PasswordResetToken;
@@ -39,8 +40,9 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final ApplicationEventPublisher publisher;
 
-    @Async
     @Override
+    @Async
+    @Transactional
     public void register(RegisterRequest request) {
         if (userRepository.existsByUserName(request.getUsername())) {
             throw new IllegalArgumentException("Username already exists");
@@ -89,6 +91,7 @@ public class AuthServiceImpl implements AuthService {
         return new AuthResponse(jwt, user.getUsername(), roles);
     }
 
+    @Async
     @Transactional
     @Override
     public void password_reset(PasswordResetDTO passwordResetDTO) {
@@ -110,10 +113,11 @@ public class AuthServiceImpl implements AuthService {
         pst.setUsed(false);
 
         PasswordResetToken save = passwordResetTokenRepository.save(pst);
-        publisher.publishEvent(new PasswordResetEvent(user.getEmail(), pst.getToken()));
         log.debug("The password reset token is saved: {}", save);
+        publisher.publishEvent(new PasswordResetEvent(user.getEmail(), pst.getToken()));
     }
 
+    @Async
     @Transactional
     @Override
     public void password_reset_confirm(PasswordResetConfirmDTO passwordResetConfirmDTO) {
@@ -126,13 +130,16 @@ public class AuthServiceImpl implements AuthService {
 
         log.debug("The token is retrieved from db");
 
-        if (token.getToken().equals(passwordResetConfirmDTO.getToken())){
+        if (token.getToken().equals(passwordResetConfirmDTO.getToken())) {
             log.debug("The token is valid");
             // update the user password to the provided password
             User user = token.getUser();
             String encodedPassword = passwordEncoder.encode(passwordResetConfirmDTO.getPassword());
             user.setPassword(encodedPassword);
-            token.setUsed(true);
+
+            publisher.publishEvent(new PasswordResetConfirmEvent(user));
+        } else {
+            log.debug("Invalid Token");
         }
     }
 }
