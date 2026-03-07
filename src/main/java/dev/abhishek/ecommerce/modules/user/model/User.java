@@ -3,8 +3,10 @@ package dev.abhishek.ecommerce.modules.user.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import dev.abhishek.ecommerce.modules.auth.model.Role;
 import dev.abhishek.ecommerce.modules.cart.entity.Cart;
+import dev.abhishek.ecommerce.modules.product.entity.Product;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -13,15 +15,14 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "users")
+@NoArgsConstructor
 public class User implements UserDetails {
 
     @Id
@@ -41,6 +42,9 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    @OneToMany(mappedBy = "seller")
+    private List<Product> products = new ArrayList<>();
+
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Cart cart;
 
@@ -57,9 +61,6 @@ public class User implements UserDetails {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-
-    public User() {
-    }
 
     @Override
     @JsonIgnore

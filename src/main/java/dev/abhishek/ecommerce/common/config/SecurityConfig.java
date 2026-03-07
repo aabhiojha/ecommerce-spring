@@ -3,6 +3,7 @@ package dev.abhishek.ecommerce.common.config;
 import dev.abhishek.ecommerce.common.security.jtw.AuthEntryPointJwt;
 import dev.abhishek.ecommerce.common.security.jtw.AccessDeniedHandlerJwt;
 import dev.abhishek.ecommerce.common.security.jtw.JwtAuthenticationFilter;
+import jakarta.servlet.DispatcherType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -45,7 +46,9 @@ public class SecurityConfig {
 
                 // Authorization rules
                 .authorizeHttpRequests((requests) -> requests
+                        .dispatcherTypeMatchers(DispatcherType.ERROR, DispatcherType.FORWARD).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/user/**").authenticated()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()

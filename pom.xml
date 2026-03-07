@@ -105,6 +105,12 @@
             <version>2.8.16</version>
         </dependency>
 
+<!--        mail sending shit-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
 
     </dependencies>
 

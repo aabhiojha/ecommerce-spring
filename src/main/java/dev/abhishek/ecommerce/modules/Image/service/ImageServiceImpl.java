@@ -1,6 +1,5 @@
 package dev.abhishek.ecommerce.modules.Image.service;
 
-import dev.abhishek.ecommerce.common.exceptions.ProductNotFoundException;
 import dev.abhishek.ecommerce.modules.Image.dtos.UploadImageDto;
 import dev.abhishek.ecommerce.modules.Image.entity.Image;
 import dev.abhishek.ecommerce.modules.Image.mapper.ImageMapper;
@@ -40,7 +39,7 @@ public class ImageServiceImpl implements ImageService {
             Product product = productRepository.findById(
                             uploadImageDto.getProductId())
                     .orElseThrow(() ->
-                            new ProductNotFoundException("Product not found with id: " + uploadImageDto.getProductId()));
+                            new Exception("Product not found with id: " + uploadImageDto.getProductId()));
             // set the information in image table
             Image entity = ImageMapper.toEntity(uploadImageDto, product, minioService.getFileUrl(file.getOriginalFilename()));
             imageRepository.save(entity);

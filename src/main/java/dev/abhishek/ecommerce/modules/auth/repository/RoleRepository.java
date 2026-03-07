@@ -1,4 +1,4 @@
-package dev.abhishek.ecommerce.modules.auth;
+package dev.abhishek.ecommerce.modules.auth.repository;
 
 import dev.abhishek.ecommerce.modules.auth.model.Role;
 import org.springframework.data.jpa.repository.JpaRepository;

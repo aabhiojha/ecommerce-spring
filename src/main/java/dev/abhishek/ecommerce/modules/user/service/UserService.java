@@ -1,12 +1,7 @@
 package dev.abhishek.ecommerce.modules.user.service;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import dev.abhishek.ecommerce.modules.user.model.User;
 
-@RequiredArgsConstructor
-@Service
-public class UserService {
-//    create user
-
-
+public interface UserService {
+    void updateUser();
 }

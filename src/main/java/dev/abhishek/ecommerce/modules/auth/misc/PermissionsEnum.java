@@ -1,4 +1,4 @@
-package dev.abhishek.ecommerce.modules.auth;
+package dev.abhishek.ecommerce.modules.auth.misc;
 
 public enum PermissionsEnum {
 
