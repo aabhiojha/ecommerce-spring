@@ -1,5 +1,6 @@
 package dev.abhishek.ecommerce.modules.auth.service;
 
+import dev.abhishek.ecommerce.common.mail.EmailServiceImpl;
 import dev.abhishek.ecommerce.common.security.jtw.JwtService;
 import dev.abhishek.ecommerce.modules.auth.authDTO.*;
 import dev.abhishek.ecommerce.modules.auth.event.PasswordResetEvent;
@@ -37,6 +38,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final ApplicationEventPublisher publisher;
+    private final EmailServiceImpl emailService;
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByUserName(request.getUsername())) {
@@ -97,31 +99,15 @@ public class AuthServiceImpl implements AuthService {
         }
 
 //        check if the otp is already sent/ in the database
-        Optional<PasswordResetToken> existingToken= passwordResetTokenRepository.findByUserAndUsedNot(user, false);
-
-        if(existingToken.isPresent()){
-            LocalDateTime expiresAt = existingToken.get().getExpiresAt();
-            // chcek if the token is still valid
-            if (expiresAt.isAfter(LocalDateTime.now())){
-                publisher.publishEvent(new PasswordResetEvent(passwordResetDTO));
-                return;
-            }
-        }
-//
-//        PasswordResetToken newToken = PasswordResetToken.builder()
-//                .token()
-//                .build();
-
-
-        // build a passwordResetToken object
-        PasswordResetToken pst = PasswordResetToken.builder()
-                .token(RandomNumbers.generateRandomNumbers())
-                .expiresAt(LocalDateTime.now().plusMinutes(30))
+        Optional<PasswordResetToken> existingToken = passwordResetTokenRepository.findFirstByUserOrderByIdDesc(user);
+        PasswordResetToken pst = existingToken.orElseGet(() -> PasswordResetToken.builder()
                 .user(user)
-                .used(false)
-                .build();
+                .build());
 
-        // send email
+        pst.setToken(RandomNumbers.generateRandomNumbers());
+        pst.setExpiresAt(LocalDateTime.now().plusMinutes(30));
+        pst.setUsed(false);
+
         PasswordResetToken save = passwordResetTokenRepository.save(pst);
         publisher.publishEvent(new PasswordResetEvent(passwordResetDTO));
         log.debug("The password reset token is saved: {}", save);
@@ -145,6 +131,7 @@ public class AuthServiceImpl implements AuthService {
             User user = token.getUser();
             String encodedPassword = passwordEncoder.encode(passwordResetConfirmDTO.getPassword());
             user.setPassword(encodedPassword);
+            token.setUsed(true);
         }
     }
 }

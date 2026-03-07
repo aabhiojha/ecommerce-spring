@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class EmailListener {
-    private final MailService mailService;
+    private final EmailServiceImpl mailService;
 
     @EventListener
     public void handleUserRegistered(UserRegisteredEvent event){
