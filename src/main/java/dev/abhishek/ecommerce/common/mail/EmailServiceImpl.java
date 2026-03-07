@@ -1,5 +1,6 @@
 package dev.abhishek.ecommerce.common.mail;
 
+import dev.abhishek.ecommerce.modules.auth.controller.AuthController;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,9 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Service
@@ -35,13 +39,23 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public void sendHtml(String to, String subject, String htmlBody) throws MessagingException {
+    public void sendHtml(String to, String subject, String templateName) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
+        MimeMessageHelper helper = new MimeMessageHelper(message,"UTF-8");
+
         helper.setTo(to);
         helper.setSubject(subject);
-        helper.setText(htmlBody, true); // true means this is HTML
+
+        try(var inputStream = AuthController.class.getResourceAsStream("/templates/"+templateName)) {
+            helper.setText(
+                    new String(inputStream.readAllBytes(), StandardCharsets.UTF_8),
+                    true
+            );
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         mailSender.send(message);
+        log.debug("The email is sent successfully");
     }
 
 

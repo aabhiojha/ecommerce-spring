@@ -1,6 +1,5 @@
 package dev.abhishek.ecommerce.modules.auth.service;
 
-import dev.abhishek.ecommerce.common.mail.EmailServiceImpl;
 import dev.abhishek.ecommerce.common.security.jtw.JwtService;
 import dev.abhishek.ecommerce.modules.auth.authDTO.*;
 import dev.abhishek.ecommerce.modules.auth.event.PasswordResetEvent;
@@ -15,6 +14,7 @@ import dev.abhishek.ecommerce.common.helpers.RandomNumbers;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -38,9 +38,10 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final ApplicationEventPublisher publisher;
-    private final EmailServiceImpl emailService;
 
-    public AuthResponse register(RegisterRequest request) {
+    @Async
+    @Override
+    public void register(RegisterRequest request) {
         if (userRepository.existsByUserName(request.getUsername())) {
             throw new IllegalArgumentException("Username already exists");
         }
@@ -64,7 +65,7 @@ public class AuthServiceImpl implements AuthService {
 
         List<String> roles = user.getRoles().stream().map(Role::getName).toList();
         publisher.publishEvent(new UserRegisteredEvent(user));
-        return new AuthResponse(jwt, user.getUsername(), roles);
+        new AuthResponse(jwt, user.getUsername(), roles);
     }
 
     public AuthResponse authenticate(AuthRequest request) {
@@ -109,7 +110,7 @@ public class AuthServiceImpl implements AuthService {
         pst.setUsed(false);
 
         PasswordResetToken save = passwordResetTokenRepository.save(pst);
-        publisher.publishEvent(new PasswordResetEvent(passwordResetDTO));
+        publisher.publishEvent(new PasswordResetEvent(user.getEmail(), pst.getToken()));
         log.debug("The password reset token is saved: {}", save);
     }
 
