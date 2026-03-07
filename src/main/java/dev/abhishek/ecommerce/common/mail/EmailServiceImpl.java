@@ -1,6 +1,8 @@
 package dev.abhishek.ecommerce.common.mail;
 
 import dev.abhishek.ecommerce.modules.auth.controller.AuthController;
+import dev.abhishek.ecommerce.modules.auth.model.PasswordResetToken;
+import dev.abhishek.ecommerce.modules.auth.repository.PasswordResetTokenRepository;
 import dev.abhishek.ecommerce.modules.user.model.User;
 import dev.abhishek.ecommerce.modules.user.repository.UserRepository;
 import dev.abhishek.ecommerce.modules.user.service.UserServiceImpl;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -24,6 +27,7 @@ public class EmailServiceImpl implements EmailService {
     private final JavaMailSender mailSender;
     private final UserServiceImpl userServiceImpl;
     private final UserRepository userRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     @Value("${spring.mail.username}")
     private String sender;
@@ -53,12 +57,25 @@ public class EmailServiceImpl implements EmailService {
 
         // lets get the user object as well
         User user = userRepository.findByEmailIgnoreCase(to).orElse(null);
+        List<PasswordResetToken> byUser = passwordResetTokenRepository.findByUserAndUsedNot(user, false);
 
         try {
             String template = loadTemplate(templateName);
-            String htmlContent = template.replace("{{username}}", user.getUsername());
+            switch (templateName) {
+                case "welcome-email.html":
+                    helper.setText(
+                            template.replace("{{username}}", user.getUsername()),
+                            true
+                    );
 
-            helper.setText(htmlContent, true);
+                case "password-reset.html":
+                    helper.setText(
+                            template.replace("{{RESET_CODE}}", (String) byUser.getFirst().getToken()),
+                            true
+                    );
+
+            }
+
 
         } catch (IOException e) {
             throw new RuntimeException(e);
