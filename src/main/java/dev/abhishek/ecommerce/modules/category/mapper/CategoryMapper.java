@@ -2,57 +2,37 @@ package dev.abhishek.ecommerce.modules.category.mapper;
 
 import dev.abhishek.ecommerce.modules.category.dtos.CategoryDto;
 import dev.abhishek.ecommerce.modules.category.dtos.CreateCategoryRequest;
+import dev.abhishek.ecommerce.modules.category.dtos.UpdateCategoryRequest;
 import dev.abhishek.ecommerce.modules.category.entity.Category;
-import dev.abhishek.ecommerce.modules.product.entity.Product;
 import dev.abhishek.ecommerce.modules.product.mapper.ProductMapper;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
 
-public class CategoryMapper {
+@Mapper(
+        componentModel = "spring",
+        uses = {ProductMapper.class},
+        unmappedTargetPolicy = ReportingPolicy.IGNORE
+)
+public interface CategoryMapper {
 
-    private CategoryMapper() {
-        // prevent instantiation
-    }
+    @Mapping(source = "id", target = "id")
+    @Mapping(source = "name", target = "name")
+    @Mapping(source = "products", target = "products")
+    CategoryDto toDto(Category category);
 
-    public static Category toEntity(CreateCategoryRequest request) {
-        if (request == null) {
-            return null;
-        }
+    List<CategoryDto> toDtoList(List<Category> categories);
 
-        Category category = new Category();
-        category.setName(request.getName());
-        return category;
-    }
+    @Mapping(source = "name", target = "name")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "products", ignore = true)
+    Category toEntity(CreateCategoryRequest request);
 
-    public static CategoryDto toDto(Category category) {
-        if (category == null) {
-            return null;
-        }
-
-        List<Product> products = category.getProducts();
-
-        return CategoryDto.builder()
-                .id(category.getId())
-                .name(category.getName())
-                .products(ProductMapper.toDtoList(products))
-                .build();
-    }
-
-    public static List<CategoryDto> toDtoList(List<Category> categories) {
-        if (categories == null) {
-            return List.of();
-        }
-
-        return categories.stream()
-                .map(CategoryMapper::toDto)
-                .toList();
-    }
-
-    public static void updateEntity(Category category, CreateCategoryRequest request) {
-        if (category == null || request == null) {
-            return;
-        }
-
-        category.setName(request.getName());
-    }
+    @Mapping(source = "name", target = "name")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "products", ignore = true)
+    void updateEntityFromRequest(UpdateCategoryRequest request, @MappingTarget Category category);
 }
