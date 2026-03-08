@@ -35,6 +35,8 @@ public class ProductDto {
     @NotNull
     private String description;
 
+    private Integer seller_id;
+
     private Integer category_id;
 
     private List<ImageDto> imageList;

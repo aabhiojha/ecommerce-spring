@@ -1,97 +1,69 @@
 package dev.abhishek.ecommerce.modules.product.mapper;
 
 import dev.abhishek.ecommerce.modules.Image.dtos.ImageDto;
+import dev.abhishek.ecommerce.modules.Image.entity.Image;
 import dev.abhishek.ecommerce.modules.Image.mapper.ImageMapper;
 import dev.abhishek.ecommerce.modules.category.entity.Category;
 import dev.abhishek.ecommerce.modules.product.dto.CreateProductRequest;
 import dev.abhishek.ecommerce.modules.product.dto.ProductDto;
 import dev.abhishek.ecommerce.modules.product.dto.UpdateProductRequest;
 import dev.abhishek.ecommerce.modules.product.entity.Product;
-import lombok.extern.slf4j.Slf4j;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.ReportingPolicy;
+import org.mapstruct.factory.Mappers;
 
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
-/**
- * Mapper utilities for Product <-> DTO conversions.
- * All methods are null-safe and treat missing category as null when converting to DTO.
- */
-@Slf4j
-public final class ProductMapper {
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+public interface ProductMapper {
+    ProductMapper INSTANCE = Mappers.getMapper(ProductMapper.class);
 
-    private ProductMapper() {
-        // utility
-    }
+    @Mapping(source = "id", target = "id")
+    @Mapping(source = "name", target = "name")
+    @Mapping(source = "brand", target = "brand")
+    @Mapping(source = "price", target = "price")
+    @Mapping(source = "inventory", target = "inventory")
+    @Mapping(source = "description", target = "description")
+    @Mapping(source = "seller.id", target = "seller_id")
+    @Mapping(source = "category.id", target = "category_id")
+    @Mapping(source = "images", target = "imageList")
+    ProductDto toDto(Product product);
 
-    public static ProductDto toDto(Product product) {
-        if (product == null) return null;
+    List<ProductDto> toDtoList(List<Product> products);
 
-        Integer categoryId = null;
-        if (product.getCategory() != null && product.getCategory().getId() != null) {
-            categoryId = product.getCategory().getId().intValue();
-        }
+    @Mapping(source = "request.name", target = "name")
+    @Mapping(source = "request.brand", target = "brand")
+    @Mapping(source = "request.price", target = "price")
+    @Mapping(source = "request.inventory", target = "inventory")
+    @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "category", target = "category")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "seller", ignore = true)
+    @Mapping(target = "images", ignore = true)
+    @Mapping(target = "cartItems", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    Product toEntity(CreateProductRequest request, Category category);
 
-        Integer inventory = null;
-        try {
-            inventory = product.getInventory();
-        } catch (Exception ignored) {
-        }
+    @Mapping(source = "request.name", target = "name")
+    @Mapping(source = "request.brand", target = "brand")
+    @Mapping(source = "request.price", target = "price")
+    @Mapping(source = "request.inventory", target = "inventory")
+    @Mapping(source = "request.description", target = "description")
+    @Mapping(source = "category", target = "category")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "seller", ignore = true)
+    @Mapping(target = "images", ignore = true)
+    @Mapping(target = "cartItems", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    void updateEntityFromRequest(UpdateProductRequest request,
+                                 @MappingTarget Product product,
+                                 Category category);
 
-        return ProductDto.builder()
-                .id(product.getId())
-                .name(product.getName())
-                .brand(product.getBrand())
-                .price(product.getPrice())
-                .inventory(inventory)
-                .description(product.getDescription())
-                .category_id(categoryId)
-                .imageList(mapImages(product))
-                .build();
-    }
-
-    public static List<ImageDto> mapImages(Product product) {
-        if (product.getImages() == null) return null;
-        return product.getImages().stream()
-                .map(image -> ImageMapper.toDto(image))
-                .toList();
-    }
-
-    public static List<ProductDto> toDtoList(List<Product> products) {
-        if (products == null) {
-            return null;
-        }
-
-        return products.stream()
-                .filter(Objects::nonNull)
-                .map(product -> toDto(product))
-                .collect(Collectors.toList());
-    }
-
-    public static Product toEntity(CreateProductRequest request, Category category) {
-        if (request == null) return null;
-
-        Product product = new Product();
-        product.setName(request.getName());
-        product.setBrand(request.getBrand());
-        product.setPrice(request.getPrice());
-        product.setInventory(request.getInventory() != null ? request.getInventory() : 0);
-        product.setDescription(request.getDescription());
-        product.setCategory(category);
-        return product;
-    }
-
-    public static void updateEntityFromRequest(UpdateProductRequest request, Product product, Category category) {
-        if (request == null || product == null) return;
-        product.setName(request.getName());
-        product.setBrand(request.getBrand());
-        product.setPrice(request.getPrice());
-        if (request.getInventory() != null) {
-            product.setInventory(request.getInventory());
-        }
-        product.setDescription(request.getDescription());
-        if (category != null) {
-            product.setCategory(category);
-        }
+    default List<ImageDto> map(List<Image> images) {
+        return ImageMapper.toDtoList(images);
     }
 }

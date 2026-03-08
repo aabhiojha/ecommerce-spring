@@ -10,8 +10,10 @@ import dev.abhishek.ecommerce.modules.product.entity.Product;
 import dev.abhishek.ecommerce.modules.category.repository.CategoryRepository;
 import dev.abhishek.ecommerce.modules.product.mapper.ProductMapper;
 import dev.abhishek.ecommerce.modules.product.repository.ProductRepository;
+import dev.abhishek.ecommerce.modules.user.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,38 +26,46 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final ProductMapper productMapper;
 
     @Override
     @Transactional
-    public ProductDto addProduct(CreateProductRequest product) {
-        log.info("The provided createProductRequest object: {}", product);
-        int categoryId = product.getCategory_id();
+    public ProductDto addProduct(CreateProductRequest createProductRequest) {
+        log.info("The provided createProductRequest object: {}", createProductRequest);
+
+        // resolving category
+        int categoryId = createProductRequest.getCategory_id();
         Category category = categoryRepository.findById((long) categoryId)
                 .orElseThrow(
                         () -> {
-                            log.warn("Category not found with id: {}", product.getCategory_id());
+                            log.warn("Category not found with id: {}", createProductRequest.getCategory_id());
                             return new CategoryNotFoundException("Category not found");
                         });
         log.debug("Category resolved: {}", category.getName());
 
-        Product productEntity = ProductMapper.toEntity(product, category);
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        Product productEntity = productMapper.toEntity(createProductRequest, category);
+        productEntity.setSeller(user);
+        log.debug("The product entity is: {}", productEntity);
+
         // create product entry
         Product saved = productRepository.save(productEntity);
         log.debug("Product created successfully with id: {}", saved.getId());
-        return ProductMapper.toDto(saved);
+        return productMapper.toDto(saved);
     }
 
 
     @Override
     public List<ProductDto> getAllProducts() {
         List<Product> products = productRepository.findAll();
-        return ProductMapper.toDtoList(products);
+        return productMapper.toDtoList(products);
     }
 
     @Override
     public ProductDto getProductById(Long id) {
         Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
-        return ProductMapper.toDto(product);
+        return productMapper.toDto(product);
     }
 
     @Override
@@ -73,7 +83,7 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new CategoryNotFoundException("Category not found with id: " + productRequest.getCategory_id()));
 
         // this will update the productEntity to reflect the changes in the request
-        ProductMapper.updateEntityFromRequest(productRequest, product, category);
+        productMapper.updateEntityFromRequest(productRequest, product, category);
         // redundant save as @Transactional flushes changes at
         // transaction commit for a managed entity.
         productRepository.save(product);
@@ -85,31 +95,31 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public List<ProductDto> getProductsByCategory(Long categoryId) {
         List<Product> allByCategoryId = productRepository.findAllByCategory_Id(categoryId);
-        return ProductMapper.toDtoList(allByCategoryId);
+        return productMapper.toDtoList(allByCategoryId);
     }
 
     @Override
     public List<ProductDto> getProductsByBrand(String brand) {
         List<Product> allByBrandIgnoreCase = productRepository.findAllByBrandIgnoreCase(brand);
-        return ProductMapper.toDtoList(allByBrandIgnoreCase);
+        return productMapper.toDtoList(allByBrandIgnoreCase);
     }
 
     @Override
     public List<ProductDto> getProductsByCategoryAndBrand(String category, String brand) {
         List<Product> products = productRepository.findAllByCategory_NameIgnoreCaseAndBrandIgnoreCase(category, brand);
-        return ProductMapper.toDtoList(products);
+        return productMapper.toDtoList(products);
     }
 
     @Override
     public List<ProductDto> getProductByName(String name) {
         List<Product> products = productRepository.findByNameIgnoreCase(name);
-        return ProductMapper.toDtoList(products);
+        return productMapper.toDtoList(products);
     }
 
     @Override
     public List<ProductDto> getProductsByBrandAndName(String brand, String name) {
         List<Product> products = productRepository.findAllByBrandContainingIgnoreCaseAndNameContainingIgnoreCase(brand, name);
-        return ProductMapper.toDtoList(products);
+        return productMapper.toDtoList(products);
     }
 
     @Override
