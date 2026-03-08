@@ -6,13 +6,12 @@ import dev.abhishek.ecommerce.modules.cart.dto.cartItem.CartItemDto;
 import dev.abhishek.ecommerce.modules.cart.dto.cartItem.UpdateCartItemRequest;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface CartService {
 
     List<CartDto> getAllCarts();
 
-    Optional<CartDto> getUserCart();
+    CartDto getUserCart();
 
     CartItemDto addCartItem(AddCartItemRequest addCartItemRequest);
 
