@@ -1,16 +1,14 @@
 package dev.abhishek.ecommerce.modules.product.entity;
 
-import dev.abhishek.ecommerce.modules.cart.entity.CartItems;
+import dev.abhishek.ecommerce.modules.cart.entity.CartItem;
 import dev.abhishek.ecommerce.modules.category.entity.Category;
 import dev.abhishek.ecommerce.modules.Image.entity.Image;
-import dev.abhishek.ecommerce.modules.order.entity.OrderItems;
 import dev.abhishek.ecommerce.modules.user.model.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -53,7 +51,7 @@ public class Product {
     private List<Image> images;
 
     @OneToMany(mappedBy = "product")
-    private List<CartItems> cartItems = new ArrayList<>();
+    private List<CartItem> cartItems = new ArrayList<>();
 
     @CreationTimestamp
     private LocalDateTime createdAt;
