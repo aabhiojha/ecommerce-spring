@@ -57,22 +57,33 @@ public class EmailServiceImpl implements EmailService {
 
         // lets get the user object as well
         User user = userRepository.findByEmailIgnoreCase(to).orElse(null);
-        List<PasswordResetToken> byUser = passwordResetTokenRepository.findByUserAndUsedNot(user, false);
+        List<PasswordResetToken> byUser = passwordResetTokenRepository.findByUserAndUsed(user, false);
 
         try {
             String template = loadTemplate(templateName);
             switch (templateName) {
-                case "welcome-email.html":
+                case "welcome-email.html" -> {
                     helper.setText(
                             template.replace("{{username}}", user.getUsername()),
                             true
                     );
+                }
 
-                case "password-reset.html":
+                case "password-reset.html" -> {
                     helper.setText(
-                            template.replace("{{RESET_CODE}}", (String) byUser.getFirst().getToken()),
+                            template.replace("{{RESET_CODE}}", String.valueOf(byUser.getFirst().getToken())),
                             true
                     );
+                }
+
+                case "password-reset-confimation.html"->{
+                    helper.setText(
+                            template.replace("{{username}}", user.getUsername()),
+                            true
+                    );
+                }
+
+                default -> throw new IllegalArgumentException("Unknown template: " + templateName);
 
             }
 
