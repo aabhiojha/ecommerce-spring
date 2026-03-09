@@ -29,4 +29,16 @@ public class OrderItems {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
+
+    @Column(name = "product_name")
+    private String productName;
+
+    @Column(name = "product_brand")
+    private String productBrand;
+
+    @Column(name = "product_description")
+    private String productDescription;
+
+    @Column(name = "product_image")
+    private String productImage;
 }
