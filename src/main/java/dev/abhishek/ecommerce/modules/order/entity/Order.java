@@ -7,6 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -31,9 +32,9 @@ public class Order {
     private List<OrderItems> orderItems = new ArrayList<>();
 
     @CreationTimestamp
-    private Date created_at;
+    private LocalDateTime created_at;
 
     @UpdateTimestamp
-    private Date updated_at;
+    private LocalDateTime updated_at;
 
 }
