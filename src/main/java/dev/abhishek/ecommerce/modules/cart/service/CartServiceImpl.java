@@ -79,6 +79,7 @@ public class CartServiceImpl implements CartService {
         CartItem cartItem = getCartItem(user, cartItemId);
         // set the quantity from request to cartItem object
         cartItem.setQuantity(updateCartItemRequest.getQuantity());
+        log.info("The quantity for cartItem: {} is updated", cartItem.getProduct().getName());
     }
 
 
@@ -89,6 +90,7 @@ public class CartServiceImpl implements CartService {
         User user = getUser();
         CartItem cartItem = getCartItem(user, cartItemId);
         cartItemRepository.delete(cartItem);
+        log.info("The cartItem with id {} is deleted", cartItem.getId());
     }
 
     // helper functions
