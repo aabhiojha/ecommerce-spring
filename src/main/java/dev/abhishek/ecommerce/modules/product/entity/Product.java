@@ -19,7 +19,14 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "products")
+@Table(name = "products",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_seller_product_name",
+                        columnNames = {"seller_id", "name"}
+                )
+        })
+
 public class Product {
 
     @Id
@@ -48,7 +55,7 @@ public class Product {
     private User seller;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Image> images;
+    private List<Image> images = new ArrayList<>();
 
     @OneToMany(mappedBy = "product")
     private List<CartItem> cartItems = new ArrayList<>();
