@@ -3,6 +3,11 @@ package dev.abhishek.ecommerce.modules.order.entity;
 import dev.abhishek.ecommerce.modules.order.misc.StatusChoice;
 import dev.abhishek.ecommerce.modules.user.model.User;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -13,8 +18,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+@Getter
+@Setter
+@Builder
 @Entity
 @Table(name = "orders")
+@NoArgsConstructor
+@AllArgsConstructor
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

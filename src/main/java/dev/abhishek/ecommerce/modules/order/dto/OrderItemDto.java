@@ -3,6 +3,7 @@ package dev.abhishek.ecommerce.modules.order.dto;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -14,7 +15,7 @@ public class OrderItemDto {
     private Long id;
     private Long quantity;
     private BigDecimal price_at_purchase;
-    private Long order_id;
+    private UUID order_id;
     private String productId;
     private String productName;
     private String productBrand;
