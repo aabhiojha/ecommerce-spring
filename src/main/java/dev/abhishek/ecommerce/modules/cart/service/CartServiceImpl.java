@@ -1,5 +1,6 @@
 package dev.abhishek.ecommerce.modules.cart.service;
 
+import dev.abhishek.ecommerce.common.exceptions.InsufficientProductInventoryException;
 import dev.abhishek.ecommerce.common.exceptions.ProductNotFoundException;
 import dev.abhishek.ecommerce.common.exceptions.ResourceNotFoundException;
 import dev.abhishek.ecommerce.modules.cart.dto.cart.CartDto;
@@ -60,6 +61,13 @@ public class CartServiceImpl implements CartService {
                 .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + addCartItemRequest.getProductId()));
         log.info("Retrieved product id={} name={}", product.getId(), product.getName());
 
+        // check the product quantity
+        if(product.getInventory() < addCartItemRequest.getQuantity()){
+            throw new InsufficientProductInventoryException(
+                    "Requested quantity exceeds available stock"
+            );
+        }
+
         CartItem cartItem = CartItem.builder()
                 .cart(cart)
                 .product(product)
@@ -78,8 +86,13 @@ public class CartServiceImpl implements CartService {
         User user = getUser();
         CartItem cartItem = getCartItem(user, cartItemId);
         // set the quantity from request to cartItem object
-        cartItem.setQuantity(updateCartItemRequest.getQuantity());
-        log.info("The quantity for cartItem: {} is updated", cartItem.getProduct().getName());
+        // after checking for existing product units
+        if (cartItem.getProduct().getInventory() > updateCartItemRequest.getQuantity()) {
+            cartItem.setQuantity(updateCartItemRequest.getQuantity());
+            log.info("The quantity for cartItem: {} is updated", cartItem.getProduct().getName());
+        } else {
+            log.info("The request quantity is greater stock");
+        }
     }
 
 
@@ -115,7 +128,7 @@ public class CartServiceImpl implements CartService {
         CartItem cartItem = cartItemRepository.findByIdAndCart_User(cartItemId, user)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Cart Item not found in your cart: id: " + cartItemId));
-        log.info("CartItem {} fetched for user: {}",cartItem.getProduct().getName(), user.getUsername());
+        log.info("CartItem {} fetched for user: {}", cartItem.getProduct().getName(), user.getUsername());
         return cartItem;
     }
 
