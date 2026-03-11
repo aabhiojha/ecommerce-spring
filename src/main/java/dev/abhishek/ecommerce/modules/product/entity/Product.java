@@ -3,10 +3,12 @@ package dev.abhishek.ecommerce.modules.product.entity;
 import dev.abhishek.ecommerce.modules.cart.entity.CartItem;
 import dev.abhishek.ecommerce.modules.category.entity.Category;
 import dev.abhishek.ecommerce.modules.Image.entity.Image;
+import dev.abhishek.ecommerce.modules.review.entity.Review;
 import dev.abhishek.ecommerce.modules.user.model.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -59,6 +61,9 @@ public class Product {
 
     @OneToMany(mappedBy = "product")
     private List<CartItem> cartItems = new ArrayList<>();
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Review> reviews;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
