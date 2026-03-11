@@ -40,7 +40,7 @@ public class Product {
 
     private BigDecimal price;
 
-    private Integer inventory;
+    private Long inventory;
 
     @NotNull
     @Column(length = 1000)

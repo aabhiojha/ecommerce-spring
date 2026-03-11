@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
                 .body(objectMap.toString());
     }
 
-    @ExceptionHandler(IllegalArgumentException.class)
+    @ExceptionHandler({IllegalArgumentException.class, InsufficientProductInventoryException.class})
     public ResponseEntity<Map<String, Object>> handleBadRequest(
             IllegalArgumentException ex,
             HttpServletRequest request
