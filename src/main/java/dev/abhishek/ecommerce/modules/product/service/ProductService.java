@@ -3,13 +3,14 @@ package dev.abhishek.ecommerce.modules.product.service;
 import dev.abhishek.ecommerce.modules.product.dto.CreateProductRequest;
 import dev.abhishek.ecommerce.modules.product.dto.ProductDto;
 import dev.abhishek.ecommerce.modules.product.dto.UpdateProductRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
 public interface ProductService {
     ProductDto addProduct(CreateProductRequest product);
 
-    List<ProductDto> getAllProducts();
+    List<ProductDto> getAllProducts(Pageable pageable, Long id, String name, String search);
 
     ProductDto getProductById(Long id);
 

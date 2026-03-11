@@ -10,9 +10,13 @@ import dev.abhishek.ecommerce.modules.product.entity.Product;
 import dev.abhishek.ecommerce.modules.category.repository.CategoryRepository;
 import dev.abhishek.ecommerce.modules.product.mapper.ProductMapper;
 import dev.abhishek.ecommerce.modules.product.repository.ProductRepository;
+import dev.abhishek.ecommerce.modules.product.specification.ProductSpecification;
 import dev.abhishek.ecommerce.modules.user.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,11 +59,11 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toDto(saved);
     }
 
-
     @Override
-    public List<ProductDto> getAllProducts() {
-        List<Product> products = productRepository.findAll();
-        return productMapper.toDtoList(products);
+    public List<ProductDto> getAllProducts(Pageable pageable, Long id, String name, String description) {
+        Specification<Product> specification = ProductSpecification.getSpecification(id, name, description);
+        return productMapper.toDtoList(productRepository.findAll(specification, pageable).getContent());
+
     }
 
     @Override

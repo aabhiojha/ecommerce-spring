@@ -5,9 +5,12 @@ import dev.abhishek.ecommerce.modules.product.dto.ProductDto;
 import dev.abhishek.ecommerce.modules.product.service.ProductServiceImpl;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,6 +21,7 @@ import java.util.List;
 public class ProductController {
 
     private final ProductServiceImpl productService;
+    private final DefaultAuthenticationEventPublisher defaultAuthenticationEventPublisher;
 
     @GetMapping("/{productId}")
     public ResponseEntity<ProductDto> getProductById(@PathVariable Long productId) {
@@ -26,8 +30,24 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductDto>> getAllProducts() {
-        List<ProductDto> allProducts = productService.getAllProducts();
+    public ResponseEntity<List<ProductDto>> getAllProducts(
+            @RequestParam(required = false, defaultValue = "0") int pageNo,
+            @RequestParam(required = false, defaultValue = "5") int pageSize,
+            @RequestParam(required = false, defaultValue = "Id") String sortBy,
+            @RequestParam(required = false, defaultValue = "ASC") String sortDir,
+            @RequestParam(required = false) Long id,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) Long seller_id,
+            @RequestParam(required = false) Long category_id
+            ) {
+        Sort sort = null;
+        if (sortDir.equalsIgnoreCase("DESC")) {
+            sort = Sort.by(sortBy).descending();
+        } else {
+            sort = Sort.by(sortBy).ascending();
+        }
+        List<ProductDto> allProducts = productService.getAllProducts(PageRequest.of(pageNo, pageSize, sort), id, name, description);
         return new ResponseEntity<>(allProducts, HttpStatus.OK);
     }
 
