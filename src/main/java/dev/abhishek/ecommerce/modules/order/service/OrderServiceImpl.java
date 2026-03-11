@@ -37,7 +37,8 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public List<OrderDto> getAllUserOrders() {
         User user = getUser();
-        return orderMapper.toOrderDtoList(orderRepository.findAllByUserOrderByCreatedAtDesc(user));
+        List<Order> allByUserOrderByCreatedAtDesc = orderRepository.findAllByUserOrderByCreatedAtDesc(user);
+        return orderMapper.toOrderDtoList(allByUserOrderByCreatedAtDesc);
     }
 
     @Override
@@ -70,6 +71,9 @@ public class OrderServiceImpl implements OrderService {
         order.setTotalPrice(orderItems.stream()
                 .map(item -> item.getPrice_at_purchase().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add));
+
+        // we need to update product inventory as we place the orders
+        
 
         Order savedOrder = orderRepository.save(order);
         // this is fine for now, later I should add a field called is_ordered field in cart items
@@ -126,6 +130,10 @@ public class OrderServiceImpl implements OrderService {
     private OrderItem toOrderItem(Order order, CartItem cartItem) {
         Product product = cartItem.getProduct();
         validateCartItem(cartItem, product);
+
+        if (product.getInventory() > cartItem.getQuantity()){
+            product.setInventory(product.getInventory()-cartItem.getQuantity());
+        }
 
         return OrderItem.builder()
                 .order(order)
