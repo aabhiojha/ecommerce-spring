@@ -24,9 +24,33 @@ public class ReviewController {
     }
 
     @PreAuthorize("hasRole('CUSTOMER')")
+    @GetMapping("/user")
+    public ResponseEntity<List<ReviewDto>> getAllUserReview() {
+        try {
+            List<ReviewDto> allUserReviews = reviewService.getAllUserReviews();
+            return new ResponseEntity<>(allUserReviews, HttpStatus.OK);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping
     public ResponseEntity<ReviewDto> createReview(@RequestBody CreateReviewDto createReviewDto) {
         ReviewDto review = reviewService.createReview(createReviewDto);
         return new ResponseEntity<>(review, HttpStatus.CREATED);
     }
+
+    @PreAuthorize("hasRole({'CUSTOMER', 'ADMIN'})")
+    @DeleteMapping("{reviewId}")
+    public ResponseEntity<?> deleteReview(@PathVariable Long reviewId) {
+        try {
+            reviewService.deleteReview(reviewId);
+            return new ResponseEntity<>(HttpStatus.CREATED);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
 }

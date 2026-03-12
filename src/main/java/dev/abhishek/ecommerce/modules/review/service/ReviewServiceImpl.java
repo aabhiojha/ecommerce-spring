@@ -1,5 +1,6 @@
 package dev.abhishek.ecommerce.modules.review.service;
 
+import dev.abhishek.ecommerce.common.exceptions.ResourceNotFoundException;
 import dev.abhishek.ecommerce.modules.order.entity.Order;
 import dev.abhishek.ecommerce.modules.order.entity.OrderItem;
 import dev.abhishek.ecommerce.modules.order.misc.StatusChoice;
@@ -59,6 +60,24 @@ public class ReviewServiceImpl implements ReviewService {
         return reviewMapper.toDto(reviewRepository.save(build));
     }
 
+
+    @Override
+    public void deleteReview(Long reviewId) {
+        User user = getUser();
+        Review review = reviewRepository.findByIdAndUser(reviewId, user).stream().findFirst().orElseThrow(
+                () -> new ResourceNotFoundException("The review doesn't exist"));
+
+        reviewRepository.delete(review);
+        log.info("The review has been deleted");
+    }
+
+    @Override
+    public List<ReviewDto> getAllUserReviews() {
+        User user = getUser();
+        List<Review> byUser = reviewRepository.findByUser(user);
+        return reviewMapper.toDtoList(byUser);
+    }
+
     private User getUser() {
         User user = (User) SecurityContextHolder
                 .getContext()
@@ -66,10 +85,5 @@ public class ReviewServiceImpl implements ReviewService {
                 .getPrincipal();
         log.info("User : {} fetched", user.getUsername());
         return user;
-    }
-
-    @Override
-    public void deleteReview(Long reviewId) {
-
     }
 }
