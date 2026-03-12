@@ -21,7 +21,6 @@ import java.util.List;
 public class ProductController {
 
     private final ProductServiceImpl productService;
-    private final DefaultAuthenticationEventPublisher defaultAuthenticationEventPublisher;
 
     @GetMapping("/{productId}")
     public ResponseEntity<ProductDto> getProductById(@PathVariable Long productId) {
@@ -40,7 +39,7 @@ public class ProductController {
             @RequestParam(required = false) String description,
             @RequestParam(required = false) Long seller_id,
             @RequestParam(required = false) Long category_id
-            ) {
+    ) {
         Sort sort = null;
         if (sortDir.equalsIgnoreCase("DESC")) {
             sort = Sort.by(sortBy).descending();
