@@ -2,10 +2,7 @@ package dev.abhishek.ecommerce.modules.Image.entity;
 
 import dev.abhishek.ecommerce.modules.product.entity.Product;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.sql.Blob;
 
@@ -14,6 +11,7 @@ import java.sql.Blob;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@Builder
 @Table(name = "images")
 public class Image {
     @Id
