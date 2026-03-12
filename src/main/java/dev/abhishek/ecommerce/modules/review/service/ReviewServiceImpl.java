@@ -12,9 +12,11 @@ import dev.abhishek.ecommerce.modules.review.entity.Review;
 import dev.abhishek.ecommerce.modules.review.mapper.ReviewMapperImpl;
 import dev.abhishek.ecommerce.modules.review.repository.ReviewRepository;
 import dev.abhishek.ecommerce.modules.user.model.User;
+import dev.abhishek.ecommerce.modules.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final ReviewRepository reviewRepository;
     private final ReviewMapperImpl reviewMapper;
     private final OrderRepository orderRepository;
+    private final UserRepository userRepository;
 
     @Override
     public List<ReviewDto> getAllReviewOfProduct(Long productId) {
@@ -77,6 +80,18 @@ public class ReviewServiceImpl implements ReviewService {
         List<Review> byUser = reviewRepository.findByUser(user);
         return reviewMapper.toDtoList(byUser);
     }
+
+    @Override
+    public void deleteReview(Long reviewId, Long user_id) {
+        User user = userRepository.findById(user_id).orElseThrow(() -> new UsernameNotFoundException("The user not found"));
+        Review review = reviewRepository.findByIdAndUser(reviewId, user).stream().findFirst().orElseThrow(
+                () -> new ResourceNotFoundException("The review doesn't exist"));
+
+        reviewRepository.delete(review);
+        log.info("The review has been deleted");
+
+    }
+
 
     private User getUser() {
         User user = (User) SecurityContextHolder
