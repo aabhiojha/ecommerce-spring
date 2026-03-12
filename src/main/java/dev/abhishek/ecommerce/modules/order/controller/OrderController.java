@@ -2,8 +2,11 @@ package dev.abhishek.ecommerce.modules.order.controller;
 
 import dev.abhishek.ecommerce.modules.order.dto.CreateOrderRequest;
 import dev.abhishek.ecommerce.modules.order.dto.OrderDto;
+import dev.abhishek.ecommerce.modules.order.misc.StatusChoice;
 import dev.abhishek.ecommerce.modules.order.service.OrderServiceImpl;
+import jakarta.websocket.server.PathParam;
 import lombok.RequiredArgsConstructor;
+import org.simpleframework.xml.Path;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -42,4 +45,13 @@ public class OrderController {
     public ResponseEntity<OrderDto> cancelOrder(@PathVariable UUID orderId) {
         return ResponseEntity.ok(orderService.cancelOrder(orderId));
     }
+
+    //update order status
+    @PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/updateStatus/{userId}/{orderId}")
+    public ResponseEntity<?> updateOrderStatus(@PathVariable UUID orderId, @RequestParam StatusChoice status, @PathVariable Long userId) {
+        orderService.updateOrderStatus(orderId, status, userId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
 }

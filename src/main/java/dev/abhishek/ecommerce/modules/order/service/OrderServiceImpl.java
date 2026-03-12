@@ -13,6 +13,8 @@ import dev.abhishek.ecommerce.modules.order.misc.StatusChoice;
 import dev.abhishek.ecommerce.modules.order.repository.OrderRepository;
 import dev.abhishek.ecommerce.modules.product.entity.Product;
 import dev.abhishek.ecommerce.modules.user.model.User;
+import dev.abhishek.ecommerce.modules.user.repository.UserRepository;
+import dev.abhishek.ecommerce.modules.user.service.UserServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -33,6 +35,8 @@ public class OrderServiceImpl implements OrderService {
     private final CartItemRepository cartItemRepository;
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
+    private final UserServiceImpl userServiceImpl;
+    private final UserRepository userRepository;
 
     @Override
     public List<OrderDto> getAllUserOrders() {
@@ -73,7 +77,7 @@ public class OrderServiceImpl implements OrderService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add));
 
         // we need to update product inventory as we place the orders
-        
+
 
         Order savedOrder = orderRepository.save(order);
         // this is fine for now, later I should add a field called is_ordered field in cart items
@@ -100,6 +104,14 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(StatusChoice.CANCELLED);
         log.info("Order {} cancelled for user {}", order.getId(), user.getUsername());
         return orderMapper.toOrderDto(order);
+    }
+
+    @Transactional
+    public void updateOrderStatus(UUID orderId, StatusChoice status, Long userId) {
+        User user = userRepository.findById(userId).orElse(null);
+        Order order = getUserOrder(orderId, user);
+
+        order.setStatus(status);
     }
 
     // helper functions
@@ -131,8 +143,8 @@ public class OrderServiceImpl implements OrderService {
         Product product = cartItem.getProduct();
         validateCartItem(cartItem, product);
 
-        if (product.getInventory() > cartItem.getQuantity()){
-            product.setInventory(product.getInventory()-cartItem.getQuantity());
+        if (product.getInventory() > cartItem.getQuantity()) {
+            product.setInventory(product.getInventory() - cartItem.getQuantity());
         }
 
         return OrderItem.builder()
