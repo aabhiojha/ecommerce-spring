@@ -4,6 +4,9 @@ import dev.abhishek.ecommerce.common.exceptions.InsufficientProductInventoryExce
 import dev.abhishek.ecommerce.common.exceptions.ProductNotFoundException;
 import dev.abhishek.ecommerce.common.exceptions.ResourceNotFoundException;
 import dev.abhishek.ecommerce.modules.cart.dto.cart.CartDto;
+import dev.abhishek.ecommerce.modules.cart.dto.cart.CartSummaryDto;
+import dev.abhishek.ecommerce.modules.cart.dto.cart.CartValidationDto;
+import dev.abhishek.ecommerce.modules.cart.dto.cart.CartValidationItemDto;
 import dev.abhishek.ecommerce.modules.cart.dto.cartItem.AddCartItemRequest;
 import dev.abhishek.ecommerce.modules.cart.dto.cartItem.CartItemDto;
 import dev.abhishek.ecommerce.modules.cart.dto.cartItem.UpdateCartItemRequest;
@@ -22,9 +25,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -50,6 +53,20 @@ public class CartServiceImpl implements CartService {
         return cartMapper.toDto(cart);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public CartSummaryDto getCartSummary() {
+        User user = getUser();
+        Cart cart = getUserCart(user);
+        CartDto cartDto = cartMapper.toDto(cart);
+
+        return CartSummaryDto.builder()
+                .cartId(cart.getId())
+                .totalItems(cartDto.getTotalItems())
+                .totalPrice(cartDto.getTotalPrice())
+                .build();
+    }
+
 
     @Override
     @Transactional
@@ -61,21 +78,29 @@ public class CartServiceImpl implements CartService {
                 .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + addCartItemRequest.getProductId()));
         log.info("Retrieved product id={} name={}", product.getId(), product.getName());
 
-        // check the product quantity
-        if(product.getInventory() < addCartItemRequest.getQuantity()){
+        // build a new if not found
+        // but use the existing cartitem if found
+        CartItem cartItem = cartItemRepository.findByCartAndProduct_Id(cart, product.getId())
+                .orElseGet(() -> CartItem.builder()
+                        .cart(cart)
+                        .product(product)
+                        .quantity(0L)
+                        .build());
+
+        // update the cartitem quantity by request quantity
+        long requestedQuantity = addCartItemRequest.getQuantity();
+        long totalQuantity = cartItem.getQuantity() + requestedQuantity;
+
+        if (product.getInventory() < totalQuantity) {
             throw new InsufficientProductInventoryException(
                     "Requested quantity exceeds available stock"
             );
         }
 
-        CartItem cartItem = CartItem.builder()
-                .cart(cart)
-                .product(product)
-                .quantity(addCartItemRequest.getQuantity())
-                .build();
+        cartItem.setQuantity(totalQuantity);
 
         CartItem savedCartItem = cartItemRepository.save(cartItem);
-        log.debug("Cart item is added successfully {}", cartItem.getProduct().getName());
+        log.debug("Cart item saved for product id={} with quantity={}", product.getId(), totalQuantity);
         return cartMapper.toItemDto(savedCartItem);
     }
 
@@ -104,6 +129,36 @@ public class CartServiceImpl implements CartService {
         CartItem cartItem = getCartItem(user, cartItemId);
         cartItemRepository.delete(cartItem);
         log.info("The cartItem with id {} is deleted", cartItem.getId());
+    }
+
+    @Override
+    @Transactional
+    public void clearCart() {
+        User user = getUser();
+        Cart cart = getUserCart(user);
+        cart.getCartItems().clear();
+        log.info("Cart cleared for user {}", user.getId());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CartValidationDto validateCart() {
+        User user = getUser();
+        Cart cart = getUserCart(user);
+
+        List<CartValidationItemDto> issues = new ArrayList<>();
+        for (CartItem cartItem : cart.getCartItems()) {
+            if (hasInventoryIssue(cartItem) || hasPriceIssue(cartItem)) {
+                CartValidationItemDto validationIssue = toValidationIssue(cartItem);
+                issues.add(validationIssue);
+            }
+        }
+
+        log.info("Cart validation completed for user {} with {} issue(s)", user.getId(), issues.size());
+        return CartValidationDto.builder()
+                .valid(issues.isEmpty())
+                .issues(issues)
+                .build();
     }
 
     // helper functions
@@ -138,5 +193,28 @@ public class CartServiceImpl implements CartService {
         cart.setUser(user);
         log.info("Cart created for user: {}", user.getUsername());
         return cartRepository.save(cart);
+    }
+
+    private boolean hasInventoryIssue(CartItem cartItem) {
+        return cartItem.getProduct().getInventory() < cartItem.getQuantity();
+    }
+
+    private boolean hasPriceIssue(CartItem cartItem) {
+        return cartItem.getProduct().getPrice() == null || cartItem.getProduct().getPrice().compareTo(BigDecimal.ZERO) < 0;
+    }
+
+    private CartValidationItemDto toValidationIssue(CartItem cartItem) {
+        String message = hasInventoryIssue(cartItem)
+                ? "Requested quantity exceeds available inventory."
+                : "Product price is invalid.";
+
+        return CartValidationItemDto.builder()
+                .cartItemId(cartItem.getId())
+                .productId(cartItem.getProduct().getId())
+                .productName(cartItem.getProduct().getName())
+                .requestedQuantity(cartItem.getQuantity())
+                .availableInventory(cartItem.getProduct().getInventory())
+                .message(message)
+                .build();
     }
 }

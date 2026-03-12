@@ -1,6 +1,8 @@
 package dev.abhishek.ecommerce.modules.cart.controller;
 
 import dev.abhishek.ecommerce.modules.cart.dto.cart.CartDto;
+import dev.abhishek.ecommerce.modules.cart.dto.cart.CartSummaryDto;
+import dev.abhishek.ecommerce.modules.cart.dto.cart.CartValidationDto;
 import dev.abhishek.ecommerce.modules.cart.dto.cartItem.AddCartItemRequest;
 import dev.abhishek.ecommerce.modules.cart.dto.cartItem.CartItemDto;
 import dev.abhishek.ecommerce.modules.cart.dto.cartItem.UpdateCartItemRequest;
@@ -26,6 +28,12 @@ public class CartController {
     }
 
     @PreAuthorize("hasRole('CUSTOMER')")
+    @GetMapping("/cart/summary")
+    public ResponseEntity<CartSummaryDto> getUserCartSummary() {
+        return ResponseEntity.ok(cartService.getCartSummary());
+    }
+
+    @PreAuthorize("hasRole('CUSTOMER')")
     @PostMapping("/cart")
     public ResponseEntity<CartItemDto> addCartItem(@RequestBody AddCartItemRequest addCartItemRequest) {
         CartItemDto cartItemDto = cartService.addCartItem(addCartItemRequest);
@@ -44,6 +52,19 @@ public class CartController {
     public ResponseEntity<?> deleteCartItem(@PathVariable Long cartItemId) {
         cartService.deleteCartItem(cartItemId);
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @DeleteMapping("/cart")
+    public ResponseEntity<Void> clearCart() {
+        cartService.clearCart();
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    @PreAuthorize("hasRole('CUSTOMER')")
+    @PostMapping("/cart/validate")
+    public ResponseEntity<CartValidationDto> validateCart() {
+        return ResponseEntity.ok(cartService.validateCart());
     }
 
 }
