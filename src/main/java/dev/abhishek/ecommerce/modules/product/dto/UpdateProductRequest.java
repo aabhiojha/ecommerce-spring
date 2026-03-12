@@ -15,20 +15,16 @@ import java.math.BigDecimal;
 @Builder
 public class UpdateProductRequest {
 
-    @NotNull
     private String name;
 
     private String brand;
 
-    @NotNull
     @Positive
     @DecimalMax("99999999")
     private BigDecimal price;
 
-    @NotNull
     private Integer inventory;
 
-    @NotNull
     private String description;
 
     private Long category_id;

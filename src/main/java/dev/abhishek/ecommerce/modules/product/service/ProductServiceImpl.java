@@ -81,19 +81,25 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public void updateProductById(UpdateProductRequest productRequest, Long productId) {
-        Product product = productRepository.findById(productId)
+    public ProductDto updateProductById(UpdateProductRequest updateRequest, Long productId) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        log.info("User fetched: {}", user.toString());
+        Product product = productRepository.findByIdAndSeller(productId, user)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + productId));
-        Category category = categoryRepository.findById(productRequest.getCategory_id())
-                .orElseThrow(() -> new CategoryNotFoundException("Category not found with id: " + productRequest.getCategory_id()));
+        log.info("Product of user: {} fetched: {}", user.toString(), product.toString());
 
+        Category category = null;
+        if (updateRequest.getCategory_id() != null) {
+            category = categoryRepository.findById(updateRequest.getCategory_id())
+                    .orElseThrow(() -> new CategoryNotFoundException("Category not found with id: " + updateRequest.getCategory_id()));
+            log.info("Category of user: {} fetched: {}", user.toString(), category.toString());
+        }
         // this will update the productEntity to reflect the changes in the request
-        productMapper.updateEntityFromRequest(productRequest, product, category);
-        // redundant save as @Transactional flushes changes at
-        // transaction commit for a managed entity.
-        productRepository.save(product);
+        productMapper.updateEntityFromRequest(updateRequest, product, category);
+        log.info("Product mapped from request entity");
+        Product savedProduct = productRepository.save(product);
         log.info("Product with id {} updated successfully", productId);
-
+        return productMapper.toDto(savedProduct);
     }
 
 

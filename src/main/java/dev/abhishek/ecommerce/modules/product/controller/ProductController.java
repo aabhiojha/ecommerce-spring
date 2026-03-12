@@ -2,9 +2,13 @@ package dev.abhishek.ecommerce.modules.product.controller;
 
 import dev.abhishek.ecommerce.modules.product.dto.CreateProductRequest;
 import dev.abhishek.ecommerce.modules.product.dto.ProductDto;
+import dev.abhishek.ecommerce.modules.product.dto.UpdateProductRequest;
 import dev.abhishek.ecommerce.modules.product.service.ProductServiceImpl;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.eclipse.angus.mail.iap.Response;
+import org.simpleframework.xml.Path;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -13,8 +17,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.DefaultAuthenticationEventPublisher;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.http.HttpResponse;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
@@ -58,6 +64,20 @@ public class ProductController {
             return new ResponseEntity<>(productDto, HttpStatus.CREATED);
         } catch (Exception e) {
             System.out.println(e.getMessage());
+        }
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    }
+
+    @PreAuthorize("hasAnyRole('SELLER')")
+    @PatchMapping("/{productId}")
+    public ResponseEntity<ProductDto> updateProduct(@RequestBody UpdateProductRequest updateProductRequest, @PathVariable Long productId) {
+        try {
+            ProductDto updatedProduct = productService.updateProductById(updateProductRequest, productId);
+            log.info("Product has been successfully updated");
+            return ResponseEntity.ok(updatedProduct);
+        }
+        catch (Exception ex ){
+            log.info("The product update failed");
         }
         return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
