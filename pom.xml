@@ -136,6 +136,11 @@
             <version>2.42.9</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.stripe</groupId>
+            <artifactId>stripe-java</artifactId>
+            <version>29.5.0</version>
+        </dependency>
 
     </dependencies>
 
