@@ -8,6 +8,7 @@ import dev.abhishek.ecommerce.modules.product.dto.CreateProductRequest;
 import dev.abhishek.ecommerce.modules.product.dto.ProductDto;
 import dev.abhishek.ecommerce.modules.product.dto.UpdateProductRequest;
 import dev.abhishek.ecommerce.modules.product.entity.Product;
+import dev.abhishek.ecommerce.modules.review.entity.Review;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -29,6 +30,8 @@ public interface ProductMapper {
     @Mapping(source = "seller.id", target = "seller_id")
     @Mapping(source = "category.id", target = "category_id")
     @Mapping(source = "images", target = "imageList")
+    @Mapping(source = "reviews", target = "rating")
+    @Mapping(source = "reviews", target = "reviewCount")
     ProductDto toDto(Product product);
 
     List<ProductDto> toDtoList(List<Product> products);
@@ -68,4 +71,43 @@ public interface ProductMapper {
     default List<ImageDto> map(List<Image> images) {
         return ImageMapper.toDtoList(images);
     }
+
+    default Float mapReviewsToRating(List<Review> reviews) {
+        if (reviews == null || reviews.isEmpty()) {
+            return 0.0F;
+        }
+        float totalRating = 0.0F;
+        int reviewCount = 0;
+
+        for (Review review : reviews) {
+            if (review == null || review.getRating() == null) {
+                continue;
+            }
+
+            totalRating += review.getRating();
+            reviewCount++;
+        }
+
+        if (reviewCount == 0) {
+            return 0.0F;
+        }
+
+        return totalRating / reviewCount;
+    }
+
+    default Integer mapReviewsToReviewCount(List<Review> reviews) {
+        if (reviews == null || reviews.isEmpty()) {
+            return 0;
+        }
+
+        int reviewCount = 0;
+        for (Review review : reviews) {
+            if (review != null) {
+                reviewCount++;
+            }
+        }
+
+        return reviewCount;
+    }
+
 }

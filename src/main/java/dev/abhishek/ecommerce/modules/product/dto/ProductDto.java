@@ -40,4 +40,8 @@ public class ProductDto {
     private Integer category_id;
 
     private List<ImageDto> imageList;
+
+    private Float rating;
+
+    private Integer reviewCount;
 }

@@ -37,7 +37,7 @@ public class ProductController {
     @GetMapping
     public ResponseEntity<List<ProductDto>> getAllProducts(
             @RequestParam(required = false, defaultValue = "0") int pageNo,
-            @RequestParam(required = false, defaultValue = "5") int pageSize,
+            @RequestParam(required = false, defaultValue = "20") int pageSize,
             @RequestParam(required = false, defaultValue = "Id") String sortBy,
             @RequestParam(required = false, defaultValue = "ASC") String sortDir,
             @RequestParam(required = false) Long id,
