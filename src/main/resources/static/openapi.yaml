@@ -1,0 +1,1716 @@
+openapi: 3.0.3
+info:
+  title: Ecommerce API
+  version: 0.0.1-SNAPSHOT
+  description: |
+    OpenAPI specification for the ecommerce backend.
+    The contract is derived from the Spring controllers in this repository.
+  contact:
+    name: Abhishek
+    email: aabhiojha08@outlook.com
+    url: https://abhishekojha.com.np
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+tags:
+  - name: Auth
+  - name: Users
+  - name: Categories
+  - name: Products
+  - name: Images
+  - name: Cart
+  - name: Orders
+  - name: Payments
+  - name: Reviews
+paths:
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new user
+      operationId: registerUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              username: alice
+              password: secret123
+              email: alice@example.com
+      responses:
+        '200':
+          description: Registered successfully. The response body is empty.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate a user and return a JWT
+      operationId: loginUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+            example:
+              username: alice
+              password: secret123
+      responses:
+        '200':
+          description: Authentication succeeded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/auth/password-reset:
+    post:
+      tags: [Auth]
+      summary: Start a password reset flow
+      operationId: requestPasswordReset
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+            example:
+              email: alice@example.com
+      responses:
+        '200':
+          description: Password reset request accepted. The response body is empty.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/auth/password-reset-confirm:
+    post:
+      tags: [Auth]
+      summary: Confirm a password reset token
+      operationId: confirmPasswordReset
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirmRequest'
+            example:
+              token: 12345
+              password: newPassword123
+      responses:
+        '200':
+          description: Password was updated successfully. The response body is empty.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/user:
+    get:
+      tags: [Users]
+      summary: List all users
+      operationId: listUsers
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of users.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/user/me:
+    get:
+      tags: [Users]
+      summary: Get the current authenticated user
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The current user profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [Users]
+      summary: Update the current authenticated user
+      operationId: updateCurrentUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+            example:
+              userName: alice2
+              email: alice2@example.com
+      responses:
+        '200':
+          description: Updated user profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/user/{userId}:
+    get:
+      tags: [Users]
+      summary: Get a user by id
+      operationId: getUserById
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      responses:
+        '200':
+          description: User profile.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Users]
+      summary: Delete a user
+      operationId: deleteUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/UserIdPath'
+      responses:
+        '204':
+          description: User deleted successfully.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/categories:
+    get:
+      tags: [Categories]
+      summary: List all categories
+      operationId: listCategories
+      security: []
+      responses:
+        '200':
+          description: A list of categories.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CategoryDto'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Categories]
+      summary: Create a category
+      operationId: createCategory
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCategoryRequest'
+            example:
+              name: Electronics
+      responses:
+        '201':
+          description: Category created successfully. The response body is empty.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/categories/{id}:
+    put:
+      tags: [Categories]
+      summary: Update a category
+      operationId: updateCategory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCategoryRequest'
+            example:
+              name: Updated Category
+      responses:
+        '200':
+          description: Category updated successfully. The response body is empty.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Categories]
+      summary: Delete a category
+      operationId: deleteCategory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Category deleted successfully. The response body is empty.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/products:
+    get:
+      tags: [Products]
+      summary: List products with optional filtering and pagination
+      operationId: listProducts
+      security: []
+      parameters:
+        - name: pageNo
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            default: Id
+        - name: sortDir
+          in: query
+          required: false
+          schema:
+            type: string
+            default: ASC
+            enum: [ASC, DESC]
+        - name: id
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: name
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: description
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: seller_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: Accepted by the controller but currently not applied in the service filter.
+        - name: category_id
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: Accepted by the controller but currently not applied in the service filter.
+      responses:
+        '200':
+          description: A list of products.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductDto'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Products]
+      summary: Create a product
+      operationId: createProduct
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+            example:
+              name: USB-C Fast Charger
+              brand: VoltEdge
+              price: 19.99
+              inventory: 50
+              description: 30W wall charger
+              category_id: 1
+      responses:
+        '201':
+          description: Product created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/products/{productId}:
+    get:
+      tags: [Products]
+      summary: Get a product by id
+      operationId: getProductById
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ProductIdPath'
+      responses:
+        '200':
+          description: Product details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDto'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [Products]
+      summary: Update a product
+      operationId: updateProduct
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProductIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+            example:
+              name: Updated name
+              price: 24.99
+              inventory: 60
+      responses:
+        '200':
+          description: Product updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/images:
+    get:
+      tags: [Images]
+      summary: List all uploaded images
+      operationId: listImages
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of images.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ImageDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/images/upload:
+    post:
+      tags: [Images]
+      summary: Upload an image for a product
+      operationId: uploadProductImage
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImageUploadRequest'
+            encoding:
+              file:
+                contentType: application/octet-stream
+      responses:
+        '200':
+          description: Image uploaded successfully.
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: Uploaded successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/images/upload-multiple:
+    post:
+      tags: [Images]
+      summary: Upload multiple images for a product
+      operationId: uploadProductImages
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImageUploadBatchRequest'
+            encoding:
+              files:
+                contentType: application/octet-stream
+      responses:
+        '200':
+          description: Images uploaded successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ImageDto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/carts/cart:
+    get:
+      tags: [Cart]
+      summary: Get the current customer's cart
+      operationId: getCart
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cart details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Cart]
+      summary: Add an item to the current customer's cart
+      operationId: addCartItem
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCartItemRequest'
+            example:
+              productId: 10
+              quantity: 2
+      responses:
+        '200':
+          description: Cart item created or updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartItemDto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Cart]
+      summary: Clear the current customer's cart
+      operationId: clearCart
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Cart cleared successfully.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/carts/cart/summary:
+    get:
+      tags: [Cart]
+      summary: Get a cart summary for the current customer
+      operationId: getCartSummary
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cart summary.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartSummaryDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/carts/cart/validate:
+    post:
+      tags: [Cart]
+      summary: Validate the current customer's cart
+      operationId: validateCart
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cart validation result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartValidationDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/carts/cart/{cartItemId}:
+    put:
+      tags: [Cart]
+      summary: Update a cart item quantity
+      operationId: updateCartItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CartItemIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCartItemRequest'
+            example:
+              quantity: 4
+      responses:
+        '200':
+          description: Cart item updated successfully. The response body is empty.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Cart]
+      summary: Delete a cart item
+      operationId: deleteCartItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/CartItemIdPath'
+      responses:
+        '200':
+          description: Cart item deleted successfully. The response body is empty.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/orders:
+    get:
+      tags: [Orders]
+      summary: List orders for the current customer
+      operationId: listOrders
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of orders.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Orders]
+      summary: Create an order from cart items
+      operationId: createOrder
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+            example:
+              cartItemIds: [1, 2, 3]
+      responses:
+        '201':
+          description: Order created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/orders/{orderId}:
+    get:
+      tags: [Orders]
+      summary: Get a customer order by id
+      operationId: getOrderById
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrderIdPath'
+      responses:
+        '200':
+          description: Order details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/orders/{orderId}/cancel:
+    patch:
+      tags: [Orders]
+      summary: Cancel an order
+      operationId: cancelOrder
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/OrderIdPath'
+      responses:
+        '200':
+          description: Order cancelled successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/orders/updateStatus/{userId}/{orderId}:
+    patch:
+      tags: [Orders]
+      summary: Update an order status as an admin
+      operationId: updateOrderStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - $ref: '#/components/parameters/OrderIdPath'
+        - name: status
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/StatusChoice'
+      responses:
+        '200':
+          description: Order status updated successfully. The response body is empty.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/payments/checkout:
+    post:
+      tags: [Payments]
+      summary: Create a Stripe checkout session
+      operationId: createCheckoutSession
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+            example:
+              currency: usd
+              cartItemIds: [1, 2]
+      responses:
+        '200':
+          description: Checkout session created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/payments/checkout/success:
+    get:
+      tags: [Payments]
+      summary: Confirm a completed checkout session
+      operationId: confirmCheckoutSession
+      security: []
+      parameters:
+        - name: session_id
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Checkout session confirmed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/payments/checkout/cancel:
+    get:
+      tags: [Payments]
+      summary: Handle a cancelled checkout session
+      operationId: cancelCheckoutSession
+      security: []
+      responses:
+        '200':
+          description: Checkout cancelled.
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: Checkout was cancelled
+  /api/payments/checkout/{checkoutSessionId}:
+    get:
+      tags: [Payments]
+      summary: Get the current status of a checkout session
+      operationId: getPaymentStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: checkoutSessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Current payment state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/reviews/{productId}:
+    get:
+      tags: [Reviews]
+      summary: List reviews for a product
+      operationId: listProductReviews
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProductIdPath'
+      responses:
+        '200':
+          description: A list of reviews.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReviewDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/reviews/user:
+    get:
+      tags: [Reviews]
+      summary: List reviews created by the current customer
+      operationId: listCurrentUserReviews
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of reviews created by the authenticated customer.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReviewDto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Reviews]
+      summary: Delete a review on behalf of a user
+      operationId: deleteReviewForUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Review deleted successfully.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/reviews:
+    post:
+      tags: [Reviews]
+      summary: Create a review
+      operationId: createReview
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReviewRequest'
+            example:
+              productId: 10
+              orderId: 8308da3e-502b-4215-ac1d-39e12b391e43
+              reviewMessage: Fast delivery and product quality is good.
+              rating: 5
+      responses:
+        '201':
+          description: Review created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewDto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Reviews]
+      summary: Delete the current customer's review
+      operationId: deleteOwnReview
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '201':
+          description: Review deleted successfully. The controller currently returns 201 Created.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    ProductIdPath:
+      name: productId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    CartItemIdPath:
+      name: cartItemId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+    OrderIdPath:
+      name: orderId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    UserIdPath:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+  responses:
+    BadRequest:
+      description: Validation or business rule failure.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication is required or the token is invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: The authenticated user does not have permission to access the resource.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFoundText:
+      description: Resource not found. The current exception handler returns a stringified map.
+      content:
+        text/plain:
+          schema:
+            type: string
+          example: '{status=404, error=Internal Server Error, message=Product not found, path=/api/products/1}'
+    InternalServerError:
+      description: Unexpected server error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          format: int32
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+      required:
+        - status
+        - error
+        - message
+        - path
+    AuthRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        username:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+      required:
+        - token
+        - username
+        - roles
+    RegisterRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        email:
+          type: string
+          format: email
+      required:
+        - username
+        - password
+        - email
+    PasswordResetRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+        - email
+    PasswordResetConfirmRequest:
+      type: object
+      properties:
+        token:
+          type: integer
+          format: int32
+        password:
+          type: string
+      required:
+        - token
+        - password
+    UpdateUserRequest:
+      type: object
+      properties:
+        userName:
+          type: string
+        email:
+          type: string
+          format: email
+    UserDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userName:
+          type: string
+        email:
+          type: string
+        enabled:
+          type: boolean
+        roles:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          description: LocalDateTime serialized by Jackson.
+        updatedAt:
+          type: string
+          description: LocalDateTime serialized by Jackson.
+      required:
+        - id
+        - userName
+        - email
+        - enabled
+        - roles
+        - createdAt
+        - updatedAt
+    CategoryDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductDto'
+      required:
+        - id
+        - name
+    CreateCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+    UpdateCategoryRequest:
+      type: object
+      properties:
+        name:
+          type: string
+      required:
+        - name
+    CreateProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        brand:
+          type: string
+        price:
+          type: number
+        inventory:
+          type: integer
+        description:
+          type: string
+        category_id:
+          type: integer
+      required:
+        - name
+        - price
+        - inventory
+        - description
+    UpdateProductRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        brand:
+          type: string
+        price:
+          type: number
+        inventory:
+          type: integer
+        description:
+          type: string
+        category_id:
+          type: integer
+          format: int64
+    ImageDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        fileName:
+          type: string
+        fileType:
+          type: string
+        downloadUrl:
+          type: string
+        productId:
+          type: integer
+          format: int64
+      required:
+        - id
+        - fileName
+        - fileType
+        - downloadUrl
+        - productId
+    ProductDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        brand:
+          type: string
+        price:
+          type: number
+        inventory:
+          type: integer
+        description:
+          type: string
+        seller_id:
+          type: integer
+        category_id:
+          type: integer
+        imageList:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImageDto'
+        rating:
+          type: number
+          format: float
+        reviewCount:
+          type: integer
+      required:
+        - name
+        - price
+        - inventory
+        - description
+    ImageUploadRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+        productId:
+          type: integer
+          format: int64
+      required:
+        - file
+        - productId
+    ImageUploadBatchRequest:
+      type: object
+      properties:
+        files:
+          type: array
+          items:
+            type: string
+            format: binary
+        productId:
+          type: integer
+          format: int64
+      required:
+        - files
+        - productId
+    AddCartItemRequest:
+      type: object
+      properties:
+        productId:
+          type: integer
+          format: int64
+        quantity:
+          type: integer
+          format: int64
+      required:
+        - productId
+        - quantity
+    UpdateCartItemRequest:
+      type: object
+      properties:
+        quantity:
+          type: integer
+          format: int64
+      required:
+        - quantity
+    CartItemDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        productId:
+          type: integer
+          format: int64
+        productName:
+          type: string
+        productImage:
+          type: string
+        price:
+          type: number
+        quantity:
+          type: integer
+          format: int64
+        subtotal:
+          type: number
+      required:
+        - id
+        - productId
+        - productName
+        - price
+        - quantity
+        - subtotal
+    CartDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItemDto'
+        totalItems:
+          type: integer
+          format: int64
+        totalPrice:
+          type: number
+      required:
+        - id
+        - items
+        - totalItems
+        - totalPrice
+    CartSummaryDto:
+      type: object
+      properties:
+        cartId:
+          type: integer
+          format: int64
+        totalItems:
+          type: integer
+          format: int64
+        totalPrice:
+          type: number
+      required:
+        - cartId
+        - totalItems
+        - totalPrice
+    CartValidationDto:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartValidationItemDto'
+      required:
+        - valid
+        - issues
+    CartValidationItemDto:
+      type: object
+      properties:
+        cartItemId:
+          type: integer
+          format: int64
+        productId:
+          type: integer
+          format: int64
+        productName:
+          type: string
+        requestedQuantity:
+          type: integer
+          format: int64
+        availableInventory:
+          type: integer
+          format: int64
+        message:
+          type: string
+      required:
+        - cartItemId
+        - productId
+        - productName
+        - requestedQuantity
+        - availableInventory
+        - message
+    CreateOrderRequest:
+      type: object
+      properties:
+        cartItemIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+    StatusChoice:
+      type: string
+      enum: [PLACED, CONFIRMED, DELIVERED, CANCELLED]
+    OrderItemDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        quantity:
+          type: integer
+          format: int64
+        price_at_purchase:
+          type: number
+        order_id:
+          type: string
+          format: uuid
+        productId:
+          type: string
+        productName:
+          type: string
+        productBrand:
+          type: string
+        productDescription:
+          type: string
+        productImage:
+          type: string
+        sub_total:
+          type: number
+      required:
+        - id
+        - quantity
+        - price_at_purchase
+        - order_id
+        - productId
+        - productName
+        - sub_total
+    OrderDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/StatusChoice'
+        user_id:
+          type: integer
+          format: int64
+        orderItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemDto'
+        total_price:
+          type: number
+        created_at:
+          type: string
+        updated_at:
+          type: string
+      required:
+        - id
+        - status
+        - user_id
+        - orderItems
+        - total_price
+        - created_at
+        - updated_at
+    PaymentRequest:
+      type: object
+      properties:
+        currency:
+          type: string
+        cartItemIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+      required:
+        - currency
+    PaymentResponse:
+      type: object
+      properties:
+        paymentId:
+          type: integer
+          format: int64
+        checkoutSessionId:
+          type: string
+        checkoutUrl:
+          type: string
+        paymentIntentId:
+          type: string
+        clientSecret:
+          type: string
+        status:
+          type: string
+        amount:
+          type: integer
+          format: int64
+        currency:
+          type: string
+        orderId:
+          type: string
+          format: uuid
+      required:
+        - paymentId
+        - checkoutSessionId
+        - checkoutUrl
+        - status
+        - amount
+        - currency
+    CreateReviewRequest:
+      type: object
+      properties:
+        productId:
+          type: integer
+          format: int64
+        orderId:
+          type: string
+          format: uuid
+        reviewMessage:
+          type: string
+        rating:
+          type: integer
+          format: int32
+      required:
+        - productId
+        - orderId
+        - reviewMessage
+        - rating
+    ReviewDto:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        userName:
+          type: string
+        reviewMessage:
+          type: string
+        rating:
+          type: integer
+          format: int32
+        productId:
+          type: integer
+          format: int64
+        productName:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - userId
+        - userName
+        - reviewMessage
+        - rating
+        - productId
+        - productName
+        - createdAt
+        - updatedAt

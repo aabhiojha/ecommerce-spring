@@ -1,6 +1,7 @@
 # Frontend API Guide
 
 This guide documents frontend integration for the current backend codebase.
+The canonical machine-readable contract is in [`docs/openapi.yaml`](docs/openapi.yaml).
 
 ## Base Setup
 
@@ -275,6 +276,15 @@ Frontend should handle both JSON and plain text safely.
   - `file` (binary)
   - `productId` (number)
 - Response body: `"Uploaded successfully"`
+
+#### `POST /api/images/upload-multiple`
+
+- Access: seller only
+- Content type: `multipart/form-data`
+- Form fields:
+  - `files[]` or repeated `files` parts (binary)
+  - `productId` (number)
+- Response: `ImageDto[]`
 
 #### `GET /api/images`
 

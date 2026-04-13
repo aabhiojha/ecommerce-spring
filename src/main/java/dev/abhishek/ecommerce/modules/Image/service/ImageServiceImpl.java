@@ -1,8 +1,10 @@
 package dev.abhishek.ecommerce.modules.Image.service;
 
+import dev.abhishek.ecommerce.modules.Image.dtos.ImageDto;
 import dev.abhishek.ecommerce.common.exceptions.ProductNotFoundException;
 import dev.abhishek.ecommerce.common.helpers.FileNameUtils;
 import dev.abhishek.ecommerce.modules.Image.dtos.UploadImageDto;
+import dev.abhishek.ecommerce.modules.Image.dtos.UploadMultipleImagesDto;
 import dev.abhishek.ecommerce.modules.Image.entity.Image;
 import dev.abhishek.ecommerce.modules.Image.mapper.ImageMapper;
 import dev.abhishek.ecommerce.modules.Image.repository.ImageRepository;
@@ -23,6 +25,8 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -44,16 +48,35 @@ public class ImageServiceImpl implements ImageService {
 
     @Transactional
     public void uploadImageToProduct(UploadImageDto uploadImageDto) throws Exception {
-
         Product product = productRepository.findById(uploadImageDto.getProductId()).orElseThrow(() -> new ProductNotFoundException("The product not found with id: " + uploadImageDto.getProductId()));
+        uploadSingleImageToProduct(product, uploadImageDto.getFile());
+    }
 
-        // check the product
-//        if product not found make
+    @Transactional
+    public List<ImageDto> uploadImagesToProduct(UploadMultipleImagesDto uploadMultipleImagesDto) throws Exception {
+        Product product = productRepository.findById(uploadMultipleImagesDto.getProductId())
+                .orElseThrow(() -> new ProductNotFoundException("The product not found with id: " + uploadMultipleImagesDto.getProductId()));
 
-        MultipartFile file = uploadImageDto.getFile();
+        List<Image> savedImages = new ArrayList<>();
+        List<String> uploadedKeys = new ArrayList<>();
+
+        try {
+            for (MultipartFile file : uploadMultipleImagesDto.getFiles()) {
+                Image image = uploadSingleImageToProduct(product, file);
+                savedImages.add(image);
+                uploadedKeys.add(image.getFileName());
+            }
+
+            return ImageMapper.toDtoList(savedImages);
+        } catch (Exception ex) {
+            rollbackUploadedFiles(uploadedKeys);
+            throw ex;
+        }
+    }
+
+    private Image uploadSingleImageToProduct(Product product, MultipartFile file) throws Exception {
         String fileName = FileNameUtils.normalize(Objects.requireNonNull(file.getOriginalFilename()));
 
-        // S3 upload
         s3Client.putObject(
                 PutObjectRequest.builder()
                         .bucket(bucketName)
@@ -74,8 +97,7 @@ public class ImageServiceImpl implements ImageService {
                     .product(product)
                     .build();
 
-            imageRepository.save(image);
-            log.debug("Image saved to db");
+            return imageRepository.save(image);
 
         } catch (Exception ex) {
             s3Client.deleteObject(
@@ -86,6 +108,21 @@ public class ImageServiceImpl implements ImageService {
             );
             log.debug("Image deleted from the s3");
             throw ex;
+        }
+    }
+
+    private void rollbackUploadedFiles(List<String> uploadedKeys) {
+        for (String key : uploadedKeys) {
+            try {
+                s3Client.deleteObject(
+                        DeleteObjectRequest.builder()
+                                .bucket(bucketName)
+                                .key(key)
+                                .build()
+                );
+            } catch (Exception cleanupException) {
+                log.warn("Failed to delete uploaded image from s3 during rollback: {}", key, cleanupException);
+            }
         }
     }
 

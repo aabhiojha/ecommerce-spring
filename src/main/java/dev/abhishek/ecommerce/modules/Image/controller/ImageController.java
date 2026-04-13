@@ -2,6 +2,7 @@ package dev.abhishek.ecommerce.modules.Image.controller;
 
 import dev.abhishek.ecommerce.modules.Image.dtos.ImageDto;
 import dev.abhishek.ecommerce.modules.Image.dtos.UploadImageDto;
+import dev.abhishek.ecommerce.modules.Image.dtos.UploadMultipleImagesDto;
 import dev.abhishek.ecommerce.modules.Image.entity.Image;
 import dev.abhishek.ecommerce.modules.Image.mapper.ImageMapper;
 import dev.abhishek.ecommerce.modules.Image.repository.ImageRepository;
@@ -14,8 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.sql.DataSource;
-import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -42,6 +42,20 @@ public class ImageController {
         imageServiceImpl.uploadImageToProduct(uploadImageDto);
 
         return ResponseEntity.ok("Uploaded successfully");
+    }
+
+    @PreAuthorize("hasRole('SELLER')")
+    @PostMapping(value = "/upload-multiple")
+    public ResponseEntity<List<ImageDto>> uploadProductImages(
+            @RequestPart("files") MultipartFile[] files,
+            @RequestParam("productId") Long productId
+    ) throws Exception {
+
+        UploadMultipleImagesDto uploadMultipleImagesDto = new UploadMultipleImagesDto();
+        uploadMultipleImagesDto.setProductId(productId);
+        uploadMultipleImagesDto.setFiles(Arrays.asList(files));
+
+        return ResponseEntity.ok(imageServiceImpl.uploadImagesToProduct(uploadMultipleImagesDto));
     }
 
     @PreAuthorize("hasAnyRole('SELLER', 'ADMIN')")
