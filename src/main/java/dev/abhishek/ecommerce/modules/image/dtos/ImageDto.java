@@ -1,14 +1,16 @@
-package dev.abhishek.ecommerce.modules.Image.dtos;
+package dev.abhishek.ecommerce.modules.image.dtos;
 
-import dev.abhishek.ecommerce.modules.product.entity.Product;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ImageDto {
     private Long id;
     private String fileName;

@@ -1,4 +1,4 @@
-package dev.abhishek.ecommerce.modules.Image.dtos;
+package dev.abhishek.ecommerce.modules.image.dtos;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotEmpty;
