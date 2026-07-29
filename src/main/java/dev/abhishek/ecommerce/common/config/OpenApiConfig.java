@@ -27,13 +27,7 @@ import java.util.Map;
                 ),
                 description = "OpenAPI definition for the ecommerce application.",
                 title = "Ecommerce api"
-        ),
-        servers = {
-                @Server(
-                        description = "Local env",
-                        url = "http://localhost:8080"
-                )
-        }
+        )
 )
 @SecurityScheme(
         name = OpenApiConfig.BEARER_SCHEME,
