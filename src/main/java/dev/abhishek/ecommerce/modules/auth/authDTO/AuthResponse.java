@@ -1,6 +1,5 @@
 package dev.abhishek.ecommerce.modules.auth.authDTO;
 
-import kotlin.internal.AccessibleLateinitPropertyLiteral;
 import lombok.*;
 
 import java.util.List;

@@ -1,9 +1,10 @@
 package dev.abhishek.ecommerce.modules.auth.authDTO;
 
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 import lombok.Setter;
 
 @Getter
@@ -12,7 +13,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AuthRequest {
-    private String username;
-    private String password;
 
+    @NotBlank
+    private String username;
+
+    @NotBlank
+    private String password;
 }
