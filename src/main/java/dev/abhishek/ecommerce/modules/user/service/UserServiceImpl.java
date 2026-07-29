@@ -12,6 +12,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import dev.abhishek.ecommerce.common.dto.PagedResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 @Slf4j
@@ -22,11 +25,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserDto> getAllUsers() {
-        log.debug("Fetching all users");
-        return userRepository.findAll().stream()
+    public PagedResponse<UserDto> getAllUsers(Pageable pageable) {
+        log.debug("Fetching users page: {}", pageable.getPageNumber());
+        Page<User> page = userRepository.findAll(pageable);
+        List<UserDto> userDtos = page.getContent().stream()
                 .map(this::toDto)
                 .toList();
+        return new PagedResponse<>(userDtos, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isLast());
     }
 
     @Override
