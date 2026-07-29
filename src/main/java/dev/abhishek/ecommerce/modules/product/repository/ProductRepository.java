@@ -17,15 +17,15 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
     List<Product> findAllByCategory(Category category);
 
-    List<Product> findAllByCategory_Id(Long categoryId);
+    Page<Product> findAllByCategory_Id(Long categoryId, Pageable pageable);
 
-    List<Product> findAllByBrandIgnoreCase(String brand);
+    Page<Product> findAllByBrandIgnoreCase(String brand, Pageable pageable);
 
-    List<Product> findAllByCategory_NameIgnoreCaseAndBrandIgnoreCase(String categoryName, String brand);
+    Page<Product> findAllByCategory_NameIgnoreCaseAndBrandIgnoreCase(String categoryName, String brand, Pageable pageable);
 
-    List<Product> findByNameIgnoreCase(String name);
+    Page<Product> findByNameIgnoreCase(String name, Pageable pageable);
 
-    List<Product> findAllByBrandContainingIgnoreCaseAndNameContainingIgnoreCase(String brand, String name);
+    Page<Product> findAllByBrandContainingIgnoreCaseAndNameContainingIgnoreCase(String brand, String name, Pageable pageable);
 
     Long countByBrandIgnoreCaseAndNameIgnoreCase(String brand, String name);
 

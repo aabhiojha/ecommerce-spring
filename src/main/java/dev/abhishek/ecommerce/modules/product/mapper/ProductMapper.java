@@ -1,8 +1,8 @@
 package dev.abhishek.ecommerce.modules.product.mapper;
 
-import dev.abhishek.ecommerce.modules.Image.dtos.ImageDto;
-import dev.abhishek.ecommerce.modules.Image.entity.Image;
-import dev.abhishek.ecommerce.modules.Image.mapper.ImageMapper;
+import dev.abhishek.ecommerce.modules.image.dtos.ImageDto;
+import dev.abhishek.ecommerce.modules.image.entity.Image;
+import dev.abhishek.ecommerce.modules.image.mapper.ImageMapper;
 import dev.abhishek.ecommerce.modules.category.entity.Category;
 import dev.abhishek.ecommerce.modules.product.dto.CreateProductRequest;
 import dev.abhishek.ecommerce.modules.product.dto.ProductDto;

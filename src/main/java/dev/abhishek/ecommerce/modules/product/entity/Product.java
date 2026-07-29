@@ -2,7 +2,7 @@ package dev.abhishek.ecommerce.modules.product.entity;
 
 import dev.abhishek.ecommerce.modules.cart.entity.CartItem;
 import dev.abhishek.ecommerce.modules.category.entity.Category;
-import dev.abhishek.ecommerce.modules.Image.entity.Image;
+import dev.abhishek.ecommerce.modules.image.entity.Image;
 import dev.abhishek.ecommerce.modules.review.entity.Review;
 import dev.abhishek.ecommerce.modules.user.model.User;
 import jakarta.persistence.*;
