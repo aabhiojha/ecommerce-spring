@@ -9,7 +9,7 @@ import com.stripe.model.checkout.Session;
 import com.stripe.net.RequestOptions;
 import com.stripe.param.checkout.SessionCreateParams;
 import dev.abhishek.ecommerce.common.exceptions.ResourceNotFoundException;
-import dev.abhishek.ecommerce.modules.Image.entity.Image;
+import dev.abhishek.ecommerce.modules.image.entity.Image;
 import dev.abhishek.ecommerce.modules.cart.entity.CartItem;
 import dev.abhishek.ecommerce.modules.cart.repository.CartItemRepository;
 import dev.abhishek.ecommerce.modules.order.entity.Order;
