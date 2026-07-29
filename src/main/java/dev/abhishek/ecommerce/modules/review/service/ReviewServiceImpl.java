@@ -9,7 +9,7 @@ import dev.abhishek.ecommerce.modules.product.entity.Product;
 import dev.abhishek.ecommerce.modules.review.dto.CreateReviewDto;
 import dev.abhishek.ecommerce.modules.review.dto.ReviewDto;
 import dev.abhishek.ecommerce.modules.review.entity.Review;
-import dev.abhishek.ecommerce.modules.review.mapper.ReviewMapperImpl;
+import dev.abhishek.ecommerce.modules.review.mapper.ReviewMapper;
 import dev.abhishek.ecommerce.modules.review.repository.ReviewRepository;
 import dev.abhishek.ecommerce.modules.user.model.User;
 import dev.abhishek.ecommerce.modules.user.repository.UserRepository;
@@ -20,6 +20,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import dev.abhishek.ecommerce.common.dto.PagedResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 @Slf4j
@@ -27,14 +30,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ReviewServiceImpl implements ReviewService {
     private final ReviewRepository reviewRepository;
-    private final ReviewMapperImpl reviewMapper;
+    private final ReviewMapper reviewMapper;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
 
     @Override
-    public List<ReviewDto> getAllReviewOfProduct(Long productId) {
-        List<Review> byProductId = reviewRepository.findByProduct_Id(productId);
-        return reviewMapper.toDtoList(byProductId);
+    @Transactional(readOnly = true)
+    public PagedResponse<ReviewDto> getAllReviewOfProduct(Long productId, Pageable pageable) {
+        Page<Review> page = reviewRepository.findByProduct_Id(productId, pageable);
+        return new PagedResponse<>(reviewMapper.toDtoList(page.getContent()), page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isLast());
     }
 
     @Override
@@ -65,9 +69,10 @@ public class ReviewServiceImpl implements ReviewService {
 
 
     @Override
+    @Transactional
     public void deleteReview(Long reviewId) {
         User user = getUser();
-        Review review = reviewRepository.findByIdAndUser(reviewId, user).stream().findFirst().orElseThrow(
+        Review review = reviewRepository.findByIdAndUser(reviewId, user).orElseThrow(
                 () -> new ResourceNotFoundException("The review doesn't exist"));
 
         reviewRepository.delete(review);
@@ -75,16 +80,18 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    public List<ReviewDto> getAllUserReviews() {
-        User user = getUser();
-        List<Review> byUser = reviewRepository.findByUser(user);
-        return reviewMapper.toDtoList(byUser);
+    @Transactional(readOnly = true)
+    public PagedResponse<ReviewDto> getAllUserReviews(Pageable pageable) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Page<Review> page = reviewRepository.findByUser(user, pageable);
+        return new PagedResponse<>(reviewMapper.toDtoList(page.getContent()), page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isLast());
     }
 
     @Override
+    @Transactional
     public void deleteReview(Long reviewId, Long user_id) {
         User user = userRepository.findById(user_id).orElseThrow(() -> new UsernameNotFoundException("The user not found"));
-        Review review = reviewRepository.findByIdAndUser(reviewId, user).stream().findFirst().orElseThrow(
+        Review review = reviewRepository.findByIdAndUser(reviewId, user).orElseThrow(
                 () -> new ResourceNotFoundException("The review doesn't exist"));
 
         reviewRepository.delete(review);
