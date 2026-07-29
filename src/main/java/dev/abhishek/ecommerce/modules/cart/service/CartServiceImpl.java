@@ -12,7 +12,7 @@ import dev.abhishek.ecommerce.modules.cart.dto.cartItem.CartItemDto;
 import dev.abhishek.ecommerce.modules.cart.dto.cartItem.UpdateCartItemRequest;
 import dev.abhishek.ecommerce.modules.cart.entity.Cart;
 import dev.abhishek.ecommerce.modules.cart.entity.CartItem;
-import dev.abhishek.ecommerce.modules.cart.mapper.CartMapperImpl;
+import dev.abhishek.ecommerce.modules.cart.mapper.CartMapper;
 import dev.abhishek.ecommerce.modules.cart.repository.CartItemRepository;
 import dev.abhishek.ecommerce.modules.cart.repository.CartRepository;
 import dev.abhishek.ecommerce.modules.product.entity.Product;
@@ -20,7 +20,6 @@ import dev.abhishek.ecommerce.modules.product.repository.ProductRepository;
 import dev.abhishek.ecommerce.modules.user.model.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.query.Page;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,23 +27,19 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class CartServiceImpl implements CartService {
+
     private final CartItemRepository cartItemRepository;
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
-    private final CartMapperImpl cartMapper;
+    private final CartMapper cartMapper;
 
     @Override
-    public Page getAllCarts() {
-        List<Cart> allCarts = cartRepository.findAll();
-        return null;
-    }
-
-
-    @Override
+    @Transactional
     public CartDto getCart() {
         User user = getUser();
         Cart cart = getUserCart(user);
@@ -54,7 +49,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public CartSummaryDto getCartSummary() {
         User user = getUser();
         Cart cart = getUserCart(user);
@@ -67,19 +62,19 @@ public class CartServiceImpl implements CartService {
                 .build();
     }
 
-
     @Override
     @Transactional
     public CartItemDto addCartItem(AddCartItemRequest addCartItemRequest) {
         User user = getUser();
         Cart cart = getUserCart(user);
 
+        long requestedQuantity = requirePositiveQuantity(addCartItemRequest.getQuantity());
+
         Product product = productRepository.findById(addCartItemRequest.getProductId())
                 .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + addCartItemRequest.getProductId()));
         log.info("Retrieved product id={} name={}", product.getId(), product.getName());
 
-        // build a new if not found
-        // but use the existing cartitem if found
+        // build a new item if not found, otherwise top up the existing one
         CartItem cartItem = cartItemRepository.findByCartAndProduct_Id(cart, product.getId())
                 .orElseGet(() -> CartItem.builder()
                         .cart(cart)
@@ -87,39 +82,35 @@ public class CartServiceImpl implements CartService {
                         .quantity(0L)
                         .build());
 
-        // update the cartitem quantity by request quantity
-        long requestedQuantity = addCartItemRequest.getQuantity();
         long totalQuantity = cartItem.getQuantity() + requestedQuantity;
-
-        if (product.getInventory() < totalQuantity) {
-            throw new InsufficientProductInventoryException(
-                    "Requested quantity exceeds available stock"
-            );
-        }
+        requireInventory(product, totalQuantity);
 
         cartItem.setQuantity(totalQuantity);
 
         CartItem savedCartItem = cartItemRepository.save(cartItem);
+        // Keep the in-memory cart consistent so a later clearCart() in the same transaction sees it.
+        if (!cart.getCartItems().contains(savedCartItem)) {
+            cart.getCartItems().add(savedCartItem);
+        }
+
         log.debug("Cart item saved for product id={} with quantity={}", product.getId(), totalQuantity);
         return cartMapper.toItemDto(savedCartItem);
     }
 
     @Override
     @Transactional
-    public void updateCartItem(Long cartItemId, UpdateCartItemRequest updateCartItemRequest) {
-//        get cart item
+    public CartItemDto updateCartItem(Long cartItemId, UpdateCartItemRequest updateCartItemRequest) {
         User user = getUser();
         CartItem cartItem = getCartItem(user, cartItemId);
-        // set the quantity from request to cartItem object
-        // after checking for existing product units
-        if (cartItem.getProduct().getInventory() > updateCartItemRequest.getQuantity()) {
-            cartItem.setQuantity(updateCartItemRequest.getQuantity());
-            log.info("The quantity for cartItem: {} is updated", cartItem.getProduct().getName());
-        } else {
-            log.info("The request quantity is greater stock");
-        }
-    }
 
+        long quantity = requirePositiveQuantity(updateCartItemRequest.getQuantity());
+        // Previously an over-stock update was silently ignored and still answered 200.
+        requireInventory(cartItem.getProduct(), quantity);
+
+        cartItem.setQuantity(quantity);
+        log.info("The quantity for cartItem {} is updated to {}", cartItem.getId(), quantity);
+        return cartMapper.toItemDto(cartItem);
+    }
 
     @Override
     @Transactional
@@ -127,6 +118,7 @@ public class CartServiceImpl implements CartService {
         // must let user delete their own cartItem only
         User user = getUser();
         CartItem cartItem = getCartItem(user, cartItemId);
+        cartItem.getCart().getCartItems().remove(cartItem);
         cartItemRepository.delete(cartItem);
         log.info("The cartItem with id {} is deleted", cartItem.getId());
     }
@@ -136,6 +128,10 @@ public class CartServiceImpl implements CartService {
     public void clearCart() {
         User user = getUser();
         Cart cart = getUserCart(user);
+
+        // Delete through the repository: the in-memory collection alone is not a reliable view.
+        List<CartItem> items = cartItemRepository.findAllByCart_User(user);
+        cartItemRepository.deleteAll(items);
         cart.getCartItems().clear();
         log.info("Cart cleared for user {}", user.getId());
     }
@@ -149,8 +145,7 @@ public class CartServiceImpl implements CartService {
         List<CartValidationItemDto> issues = new ArrayList<>();
         for (CartItem cartItem : cart.getCartItems()) {
             if (hasInventoryIssue(cartItem) || hasPriceIssue(cartItem)) {
-                CartValidationItemDto validationIssue = toValidationIssue(cartItem);
-                issues.add(validationIssue);
+                issues.add(toValidationIssue(cartItem));
             }
         }
 
@@ -162,45 +157,55 @@ public class CartServiceImpl implements CartService {
     }
 
     // helper functions
-    // get user function
     private User getUser() {
         User user = (User) SecurityContextHolder
                 .getContext()
                 .getAuthentication()
                 .getPrincipal();
-        log.info("User : {} fetched", user.getUsername());
+        log.debug("User : {} fetched", user.getUsername());
         return user;
     }
 
-    // get cart of the user
     private Cart getUserCart(User user) {
-        Cart cart = cartRepository.findByUser(user).orElseGet(() -> createCart(user));
-        log.info("Cart fetched for user {}", user.getId());
-        return cart;
+        return cartRepository.findByUser(user).orElseGet(() -> createCart(user));
     }
 
     private CartItem getCartItem(User user, Long cartItemId) {
-        CartItem cartItem = cartItemRepository.findByIdAndCart_User(cartItemId, user)
+        return cartItemRepository.findByIdAndCart_User(cartItemId, user)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Cart Item not found in your cart: id: " + cartItemId));
-        log.info("CartItem {} fetched for user: {}", cartItem.getProduct().getName(), user.getUsername());
-        return cartItem;
     }
 
     private Cart createCart(User user) {
-        // create a cart with the associated user
         Cart cart = new Cart();
         cart.setUser(user);
         log.info("Cart created for user: {}", user.getUsername());
         return cartRepository.save(cart);
     }
 
+    private long requirePositiveQuantity(Long quantity) {
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be greater than zero");
+        }
+        return quantity;
+    }
+
+    private void requireInventory(Product product, long requestedQuantity) {
+        Long inventory = product.getInventory();
+        if (inventory == null || inventory < requestedQuantity) {
+            throw new InsufficientProductInventoryException(
+                    "Requested quantity exceeds available stock for product: " + product.getName());
+        }
+    }
+
     private boolean hasInventoryIssue(CartItem cartItem) {
-        return cartItem.getProduct().getInventory() < cartItem.getQuantity();
+        Long inventory = cartItem.getProduct().getInventory();
+        return inventory == null || inventory < cartItem.getQuantity();
     }
 
     private boolean hasPriceIssue(CartItem cartItem) {
-        return cartItem.getProduct().getPrice() == null || cartItem.getProduct().getPrice().compareTo(BigDecimal.ZERO) < 0;
+        BigDecimal price = cartItem.getProduct().getPrice();
+        return price == null || price.compareTo(BigDecimal.ZERO) <= 0;
     }
 
     private CartValidationItemDto toValidationIssue(CartItem cartItem) {
