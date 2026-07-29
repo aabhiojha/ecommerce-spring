@@ -76,7 +76,8 @@ Frontend should handle both JSON and plain text safely.
 }
 ```
 
-- Response: `200 OK` with empty body
+- Response: `201 Created` with the same `AuthResponse` shape as login, so the user can be
+  signed in straight away without a second round trip.
 
 #### `POST /api/auth/login`
 
@@ -111,7 +112,9 @@ Frontend should handle both JSON and plain text safely.
 }
 ```
 
-- Response: `200 OK`
+- Response: `202 Accepted`. The answer is identical whether or not the address is registered,
+  so it cannot be used to find out who has an account. A nine digit code valid for 30 minutes
+  is mailed out, and issuing a new one invalidates any previous code.
 
 #### `POST /api/auth/password-reset-confirm`
 
@@ -120,12 +123,13 @@ Frontend should handle both JSON and plain text safely.
 
 ```json
 {
-  "token": 12345,
+  "token": 123456789,
   "password": "newPassword123"
 }
 ```
 
-- Response: `200 OK`
+- Response: `200 OK`. Returns `400` when the code is unknown, already used, or expired.
+  A code can only be redeemed once.
 
 ### User
 
@@ -219,13 +223,11 @@ Frontend should handle both JSON and plain text safely.
 - Query params:
   - `pageNo` (default `0`)
   - `pageSize` (default `20`)
-  - `sortBy` (default `Id`)
+  - `sortBy` (default `id`; one of `id`, `name`, `brand`, `price`, `inventory`, `createdAt`, `updatedAt`)
   - `sortDir` (`ASC` or `DESC`)
   - `id`
   - `name`
   - `description`
-  - `seller_id` (currently not applied in service filter)
-  - `category_id` (currently not applied in service filter)
 - Response: `ProductDto[]`
 
 #### `GET /api/products/{productId}`
@@ -266,7 +268,17 @@ Frontend should handle both JSON and plain text safely.
 
 - Response: `200 OK` with `ProductDto`
 
+#### `DELETE /api/products/{productId}`
+
+- Access: seller only, and only for their own products
+- Response: `204 No Content`
+
 ### Images
+
+Images are stored in RustFS (S3-compatible) and `downloadUrl` points at the public RustFS URL.
+Only the seller who owns a product may add or remove its images. Uploads are limited to image
+content types (`jpeg`, `png`, `webp`, `gif`, `avif`) and 5 MB per file by default; a larger file
+gets `413`.
 
 #### `POST /api/images/upload`
 
@@ -275,7 +287,7 @@ Frontend should handle both JSON and plain text safely.
 - Form fields:
   - `file` (binary)
   - `productId` (number)
-- Response body: `"Uploaded successfully"`
+- Response: `201 Created` with `ImageDto`
 
 #### `POST /api/images/upload-multiple`
 
@@ -284,12 +296,17 @@ Frontend should handle both JSON and plain text safely.
 - Form fields:
   - `files[]` or repeated `files` parts (binary)
   - `productId` (number)
+- Response: `201 Created` with `ImageDto[]`
+
+#### `GET /api/images/product/{productId}`
+
+- Access: public
 - Response: `ImageDto[]`
 
-#### `GET /api/images`
+#### `DELETE /api/images/{imageId}`
 
-- Access: seller or admin
-- Response: `ImageDto[]`
+- Access: seller only, and only for images of their own products
+- Response: `204 No Content`
 
 ### Cart (Customer)
 
@@ -315,7 +332,8 @@ Frontend should handle both JSON and plain text safely.
 }
 ```
 
-- Response: `CartItemDto`
+- Response: `201 Created` with `CartItemDto`. Returns `400` when the requested quantity
+  exceeds the available stock.
 
 #### `PUT /api/carts/cart/{cartItemId}`
 
@@ -328,12 +346,13 @@ Frontend should handle both JSON and plain text safely.
 }
 ```
 
-- Response: `200 OK`
+- Response: `200 OK` with the updated `CartItemDto`. Returns `400` when the requested quantity
+  exceeds the available stock; the update is never silently ignored.
 
 #### `DELETE /api/carts/cart/{cartItemId}`
 
 - Access: customer only
-- Response: `200 OK`
+- Response: `204 No Content`
 
 #### `DELETE /api/carts/cart`
 
@@ -381,7 +400,7 @@ Frontend should handle both JSON and plain text safely.
 - Access: admin only
 - Query param:
   - `status` enum: `PLACED`, `CONFIRMED`, `DELIVERED`, `CANCELLED`
-- Response: `200 OK`
+- Response: `200 OK` with the updated `OrderDto`
 
 ### Payments
 
@@ -477,7 +496,7 @@ Frontend should handle both JSON and plain text safely.
 
 ## Frontend Integration Notes
 
-- Do not assume `register` returns token; always redirect to login.
+- `register` returns a token, so the user can be signed in without a second login call.
 - Centralize auth token injection and `401` handling.
 - Use role-based route guards from `roles`.
 - Treat empty `200` responses as successful operations.
