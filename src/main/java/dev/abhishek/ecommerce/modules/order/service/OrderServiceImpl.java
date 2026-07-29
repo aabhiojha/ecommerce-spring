@@ -1,7 +1,8 @@
 package dev.abhishek.ecommerce.modules.order.service;
 
+import dev.abhishek.ecommerce.common.exceptions.InsufficientProductInventoryException;
 import dev.abhishek.ecommerce.common.exceptions.ResourceNotFoundException;
-import dev.abhishek.ecommerce.modules.Image.entity.Image;
+import dev.abhishek.ecommerce.modules.image.entity.Image;
 import dev.abhishek.ecommerce.modules.cart.entity.CartItem;
 import dev.abhishek.ecommerce.modules.cart.repository.CartItemRepository;
 import dev.abhishek.ecommerce.modules.order.dto.CreateOrderRequest;
@@ -14,7 +15,6 @@ import dev.abhishek.ecommerce.modules.order.repository.OrderRepository;
 import dev.abhishek.ecommerce.modules.product.entity.Product;
 import dev.abhishek.ecommerce.modules.user.model.User;
 import dev.abhishek.ecommerce.modules.user.repository.UserRepository;
-import dev.abhishek.ecommerce.modules.user.service.UserServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,6 +22,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import dev.abhishek.ecommerce.common.dto.PagedResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -32,23 +35,31 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
+
     private final CartItemRepository cartItemRepository;
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
-    private final UserServiceImpl userServiceImpl;
     private final UserRepository userRepository;
 
     @Override
-    public List<OrderDto> getAllUserOrders() {
+    @Transactional(readOnly = true)
+    public PagedResponse<OrderDto> getAllUserOrders(Pageable pageable) {
         User user = getUser();
-        List<Order> allByUserOrderByCreatedAtDesc = orderRepository.findAllByUserOrderByCreatedAtDesc(user);
-        return orderMapper.toOrderDtoList(allByUserOrderByCreatedAtDesc);
+        Page<Order> page = orderRepository.findAllByUserOrderByCreatedAtDesc(user, pageable);
+        return new PagedResponse<>(orderMapper.toOrderDtoList(page.getContent()), page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isLast());
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public PagedResponse<OrderDto> getAllOrders(Pageable pageable) {
+        Page<Order> page = orderRepository.findAll(pageable);
+        return new PagedResponse<>(orderMapper.toOrderDtoList(page.getContent()), page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isLast());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public OrderDto getUserOrder(UUID orderId) {
-        User user = getUser();
-        return orderMapper.toOrderDto(getUserOrder(orderId, user));
+        return orderMapper.toOrderDto(getUserOrder(orderId, getUser()));
     }
 
     @Override
@@ -65,27 +76,22 @@ public class OrderServiceImpl implements OrderService {
                 .user(user)
                 .status(StatusChoice.PLACED)
                 .orderItems(new ArrayList<>())
+                .totalPrice(BigDecimal.ZERO)
                 .build();
 
+        // Hibernate owns this collection, so it has to stay mutable.
         List<OrderItem> orderItems = cartItems.stream()
                 .map(cartItem -> toOrderItem(order, cartItem))
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
 
-        order.setOrderItems(orderItems);
+        order.getOrderItems().addAll(orderItems);
         order.setTotalPrice(orderItems.stream()
                 .map(item -> item.getPrice_at_purchase().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add));
 
-        // we need to update product inventory as we place the orders
-
-
         Order savedOrder = orderRepository.save(order);
-        // this is fine for now, later I should add a field called is_ordered field in cart items
-        // fetching for cart items from user side should be done by using this isEnabled flag
-        // for now passed cart items are straight up deleted from the cart
-        // later for recommendation system, I could do use the items in cart to recommend similar type of products to the user
+        // The ordered items leave the cart; a future is_ordered flag would let us keep them for recommendations.
         cartItemRepository.deleteAll(cartItems);
-
 
         log.info("Order {} created for user {}", savedOrder.getId(), user.getUsername());
         return orderMapper.toOrderDto(savedOrder);
@@ -101,17 +107,33 @@ public class OrderServiceImpl implements OrderService {
             return orderMapper.toOrderDto(order);
         }
 
+        if (order.getStatus() == StatusChoice.DELIVERED) {
+            throw new IllegalArgumentException("A delivered order can no longer be cancelled");
+        }
+
+        // Put the reserved stock back.
+        for (OrderItem item : order.getOrderItems()) {
+            Product product = item.getProduct();
+            if (product != null && product.getInventory() != null) {
+                product.setInventory(product.getInventory() + item.getQuantity());
+            }
+        }
+
         order.setStatus(StatusChoice.CANCELLED);
         log.info("Order {} cancelled for user {}", order.getId(), user.getUsername());
         return orderMapper.toOrderDto(order);
     }
 
+    @Override
     @Transactional
-    public void updateOrderStatus(UUID orderId, StatusChoice status, Long userId) {
-        User user = userRepository.findById(userId).orElse(null);
-        Order order = getUserOrder(orderId, user);
+    public OrderDto updateOrderStatus(UUID orderId, StatusChoice status, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
+        Order order = getUserOrder(orderId, user);
         order.setStatus(status);
+        log.info("Order {} moved to status {}", orderId, status);
+        return orderMapper.toOrderDto(order);
     }
 
     // helper functions
@@ -120,7 +142,7 @@ public class OrderServiceImpl implements OrderService {
                 .getContext()
                 .getAuthentication()
                 .getPrincipal();
-        log.info("User : {} fetched", user.getUsername());
+        log.debug("User : {} fetched", user.getUsername());
         return user;
     }
 
@@ -143,9 +165,8 @@ public class OrderServiceImpl implements OrderService {
         Product product = cartItem.getProduct();
         validateCartItem(cartItem, product);
 
-        if (product.getInventory() > cartItem.getQuantity()) {
-            product.setInventory(product.getInventory() - cartItem.getQuantity());
-        }
+        // Stock is always decremented; previously an order for the full remaining stock left inventory untouched.
+        product.setInventory(product.getInventory() - cartItem.getQuantity());
 
         return OrderItem.builder()
                 .order(order)
@@ -184,6 +205,11 @@ public class OrderServiceImpl implements OrderService {
 
         if (product.getPrice() == null) {
             throw new IllegalArgumentException("Product price is missing for cart item: id: " + cartItem.getId());
+        }
+
+        if (product.getInventory() == null || product.getInventory() < cartItem.getQuantity()) {
+            throw new InsufficientProductInventoryException(
+                    "Requested quantity exceeds available inventory for product: " + product.getName());
         }
     }
 }
