@@ -1,33 +1,28 @@
 package dev.abhishek.ecommerce.common.mail;
 
-import dev.abhishek.ecommerce.modules.auth.controller.AuthController;
-import dev.abhishek.ecommerce.modules.auth.model.PasswordResetToken;
-import dev.abhishek.ecommerce.modules.auth.repository.PasswordResetTokenRepository;
-import dev.abhishek.ecommerce.modules.user.model.User;
-import dev.abhishek.ecommerce.modules.user.repository.UserRepository;
-import dev.abhishek.ecommerce.modules.user.service.UserServiceImpl;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
+
     private final JavaMailSender mailSender;
-    private final UserServiceImpl userServiceImpl;
-    private final UserRepository userRepository;
-    private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     @Value("${spring.mail.username}")
     private String sender;
@@ -41,65 +36,44 @@ public class EmailServiceImpl implements EmailService {
             message.setSubject(subject);
             message.setText(body);
             mailSender.send(message);
-            log.debug("The mail is sent: {}", (Object) message.getTo());
-        } catch (Exception e) {
-            log.error("Error while sending mail");
+            log.debug("Plain text mail sent to {}", to);
+        } catch (MailException ex) {
+            log.error("Could not send plain text mail to {}", to, ex);
         }
     }
 
     @Override
-    public void sendHtml(String to, String subject, String templateName) throws MessagingException {
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
-
-        helper.setTo(to);
-        helper.setSubject(subject);
-
-        // lets get the user object as well
-        User user = userRepository.findByEmailIgnoreCase(to).orElse(null);
-        List<PasswordResetToken> byUser = passwordResetTokenRepository.findByUserAndUsed(user, false);
-
+    public void sendHtml(String to, String subject, String templateName, Map<String, String> model) {
         try {
-            String template = loadTemplate(templateName);
-            switch (templateName) {
-                case "welcome-email.html" -> {
-                    helper.setText(
-                            template.replace("{{username}}", user.getUsername()),
-                            true
-                    );
-                }
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, StandardCharsets.UTF_8.name());
+            helper.setFrom(sender);
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(render(templateName, model), true);
 
-                case "password-reset.html" -> {
-                    helper.setText(
-                            template.replace("{{RESET_CODE}}", String.valueOf(byUser.getFirst().getToken())),
-                            true
-                    );
-                }
+            mailSender.send(message);
+            log.debug("Template {} sent to {}", templateName, to);
+        } catch (MessagingException | MailException | IOException ex) {
+            // A failed notification must never fail the request that triggered it.
+            log.error("Could not send template {} to {}", templateName, to, ex);
+        }
+    }
 
-                case "password-reset-confimation.html"->{
-                    helper.setText(
-                            template.replace("{{username}}", user.getUsername()),
-                            true
-                    );
-                }
-
-                default -> throw new IllegalArgumentException("Unknown template: " + templateName);
-
-            }
-
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    private String render(String templateName, Map<String, String> model) throws IOException {
+        ClassPathResource resource = new ClassPathResource("templates/" + templateName);
+        if (!resource.exists()) {
+            throw new IOException("Unknown mail template: " + templateName);
         }
 
-        mailSender.send(message);
-        log.debug("The email is sent successfully");
-    }
+        String template;
+        try (InputStream inputStream = resource.getInputStream()) {
+            template = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
 
-    private String loadTemplate(String templateName) throws IOException {
-        return new String(
-                AuthController.class.getResourceAsStream("/templates/" + templateName).readAllBytes()
-        );
+        for (Map.Entry<String, String> entry : model.entrySet()) {
+            template = template.replace("{{" + entry.getKey() + "}}", entry.getValue() == null ? "" : entry.getValue());
+        }
+        return template;
     }
-
 }

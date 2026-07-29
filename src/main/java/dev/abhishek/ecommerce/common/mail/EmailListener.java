@@ -4,42 +4,60 @@ import dev.abhishek.ecommerce.modules.auth.event.PasswordResetConfirmEvent;
 import dev.abhishek.ecommerce.modules.auth.event.PasswordResetEvent;
 import dev.abhishek.ecommerce.modules.auth.event.UserRegisteredEvent;
 import dev.abhishek.ecommerce.modules.user.model.User;
-import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.util.Map;
+
+/**
+ * Mails are sent after the triggering transaction commits, so a rolled back
+ * registration or password reset never produces an email.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class EmailListener {
-    private final EmailServiceImpl mailService;
+
     private final EmailService emailService;
 
-    @EventListener
-    public void handleUserRegistered(UserRegisteredEvent event) throws MessagingException {
+    @Async
+    @TransactionalEventListener
+    public void handleUserRegistered(UserRegisteredEvent event) {
         User user = event.user();
         log.debug("The user {} has successfully registered", user.getUsername());
-//        mailService.sendPlainText(user.getEmail(), "Welcome to the website", "welcome mail.");
-        mailService.sendHtml(user.getEmail(), "Welcome to the website", "welcome-email.html");
+        emailService.sendHtml(
+                user.getEmail(),
+                "Welcome to the website",
+                "welcome-email.html",
+                Map.of("username", user.getUsername())
+        );
     }
 
-    @EventListener
-    public void handlePasswordReset(PasswordResetEvent event) throws MessagingException {
-
-        String email = event.email();
-
-        mailService.sendHtml(email, "Password update request OTP", "password-reset.html");
-        log.debug("Password reset code sent to {}", event.email());
+    @Async
+    @TransactionalEventListener
+    public void handlePasswordReset(PasswordResetEvent event) {
+        emailService.sendHtml(
+                event.email(),
+                "Password update request OTP",
+                "password-reset.html",
+                Map.of("RESET_CODE", String.valueOf(event.token()))
+        );
+        log.debug("Password reset code sent");
     }
 
-    @EventListener
-    public void handlePasswordResetConfirmation(PasswordResetConfirmEvent event) throws MessagingException {
+    @Async
+    @TransactionalEventListener
+    public void handlePasswordResetConfirmation(PasswordResetConfirmEvent event) {
         User user = event.user();
-
-        mailService.sendHtml(user.getEmail(), "Password reset successful", "password-reset-confimation.html");
-        log.debug("Password reset notice sent to email {}", user.getEmail());
+        emailService.sendHtml(
+                user.getEmail(),
+                "Password reset successful",
+                "password-reset-confimation.html",
+                Map.of("username", user.getUsername())
+        );
+        log.debug("Password reset notice sent");
     }
-
 }
