@@ -1,6 +1,6 @@
 package dev.abhishek.ecommerce.modules.order.mapper;
 
-import dev.abhishek.ecommerce.modules.Image.entity.Image;
+import dev.abhishek.ecommerce.modules.image.entity.Image;
 import dev.abhishek.ecommerce.modules.order.dto.OrderDto;
 import dev.abhishek.ecommerce.modules.order.dto.OrderItemDto;
 import dev.abhishek.ecommerce.modules.order.entity.Order;
