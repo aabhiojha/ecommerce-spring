@@ -6,11 +6,13 @@ import dev.abhishek.ecommerce.modules.auth.authDTO.AuthRequest;
 import dev.abhishek.ecommerce.modules.auth.authDTO.AuthResponse;
 import dev.abhishek.ecommerce.modules.auth.authDTO.PasswordResetConfirmDTO;
 import dev.abhishek.ecommerce.modules.auth.authDTO.PasswordResetDTO;
+import dev.abhishek.ecommerce.modules.auth.authDTO.RefreshTokenRequest;
 import dev.abhishek.ecommerce.modules.auth.authDTO.RegisterRequest;
 import dev.abhishek.ecommerce.modules.auth.event.PasswordResetConfirmEvent;
 import dev.abhishek.ecommerce.modules.auth.event.PasswordResetEvent;
 import dev.abhishek.ecommerce.modules.auth.event.UserRegisteredEvent;
 import dev.abhishek.ecommerce.modules.auth.model.PasswordResetToken;
+import dev.abhishek.ecommerce.modules.auth.model.RefreshToken;
 import dev.abhishek.ecommerce.modules.auth.model.Role;
 import dev.abhishek.ecommerce.modules.auth.repository.PasswordResetTokenRepository;
 import dev.abhishek.ecommerce.modules.auth.repository.RoleRepository;
@@ -44,6 +46,22 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final ApplicationEventPublisher publisher;
+    private final RefreshTokenService refreshTokenService;
+
+    @Override
+    public AuthResponse refreshToken(RefreshTokenRequest request) {
+        return refreshTokenService.findByToken(request.getRefreshToken())
+                .map(refreshTokenService::verifyExpiration)
+                .map(RefreshToken::getUser)
+                .map(user -> {
+                    String jwt = jwtService.generateToken(user);
+                    List<String> roles = user.getRoles().stream()
+                            .map(Role::getName)
+                            .toList();
+                    return new AuthResponse(jwt, request.getRefreshToken(), user.getUsername(), roles);
+                })
+                .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
+    }
 
     @Override
     @Transactional
@@ -71,10 +89,11 @@ public class AuthServiceImpl implements AuthService {
 
         // Generate JWT for immediate login after registration
         String jwt = jwtService.generateToken(savedUser);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(savedUser.getUsername());
         List<String> roles = savedUser.getRoles().stream().map(Role::getName).toList();
 
         publisher.publishEvent(new UserRegisteredEvent(savedUser));
-        return new AuthResponse(jwt, savedUser.getUsername(), roles);
+        return new AuthResponse(jwt, refreshToken.getToken(), savedUser.getUsername(), roles);
     }
 
     @Override
@@ -93,10 +112,11 @@ public class AuthServiceImpl implements AuthService {
 
         // Generate and return JWT
         String jwt = jwtService.generateToken(user);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getUsername());
         List<String> roles = user.getRoles().stream()
                 .map(Role::getName)
                 .toList();
-        return new AuthResponse(jwt, user.getUsername(), roles);
+        return new AuthResponse(jwt, refreshToken.getToken(), user.getUsername(), roles);
     }
 
     @Override

@@ -5,6 +5,7 @@ import dev.abhishek.ecommerce.modules.auth.authDTO.AuthResponse;
 import dev.abhishek.ecommerce.modules.auth.authDTO.PasswordResetConfirmDTO;
 import dev.abhishek.ecommerce.modules.auth.authDTO.PasswordResetDTO;
 import dev.abhishek.ecommerce.modules.auth.authDTO.RegisterRequest;
+import dev.abhishek.ecommerce.modules.auth.authDTO.RefreshTokenRequest;
 import dev.abhishek.ecommerce.modules.auth.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,12 @@ public class AuthController {
     public ResponseEntity<AuthResponse> authenticate(@Valid @RequestBody AuthRequest request) {
         // Authenticate and return JWT
         return ResponseEntity.ok(authService.authenticate(request));
+    }
+
+    @Operation(summary = "Refresh token", description = "Refreshes a JWT token using a refresh token")
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        return ResponseEntity.ok(authService.refreshToken(request));
     }
 
     @Operation(summary = "Request password reset", description = "Sends a password reset email if the account exists")

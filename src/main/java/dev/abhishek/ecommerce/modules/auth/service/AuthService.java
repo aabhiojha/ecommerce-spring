@@ -4,9 +4,11 @@ import dev.abhishek.ecommerce.modules.auth.authDTO.AuthRequest;
 import dev.abhishek.ecommerce.modules.auth.authDTO.AuthResponse;
 import dev.abhishek.ecommerce.modules.auth.authDTO.PasswordResetConfirmDTO;
 import dev.abhishek.ecommerce.modules.auth.authDTO.PasswordResetDTO;
+import dev.abhishek.ecommerce.modules.auth.authDTO.RefreshTokenRequest;
 import dev.abhishek.ecommerce.modules.auth.authDTO.RegisterRequest;
 
 public interface AuthService {
+    AuthResponse refreshToken(RefreshTokenRequest request);
     AuthResponse register(RegisterRequest request);
 
     AuthResponse authenticate(AuthRequest request);
