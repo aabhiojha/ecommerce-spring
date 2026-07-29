@@ -1,13 +1,10 @@
 package dev.abhishek.ecommerce.modules.product.dto;
 
-import dev.abhishek.ecommerce.modules.Image.dtos.ImageDto;
-import dev.abhishek.ecommerce.modules.Image.entity.Image;
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
+import dev.abhishek.ecommerce.modules.image.dtos.ImageDto;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
@@ -17,28 +14,25 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ProductDto implements Serializable {
+
     private Long id;
 
-    @NotNull
     private String name;
 
     private String brand;
 
-    @NotNull
-    @Positive
-    @DecimalMax("99999999")
     private BigDecimal price;
 
-    @NotNull
-    private Integer inventory;
+    private Long inventory;
 
-    @NotNull
     private String description;
 
-    private Integer seller_id;
+    private Long seller_id;
 
-    private Integer category_id;
+    private Long category_id;
 
     private List<ImageDto> imageList;
 

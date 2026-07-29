@@ -4,13 +4,14 @@ import dev.abhishek.ecommerce.modules.product.dto.CreateProductRequest;
 import dev.abhishek.ecommerce.modules.product.dto.ProductDto;
 import dev.abhishek.ecommerce.modules.product.dto.UpdateProductRequest;
 import org.springframework.data.domain.Pageable;
+import dev.abhishek.ecommerce.common.dto.PagedResponse;
 
 import java.util.List;
 
 public interface ProductService {
     ProductDto addProduct(CreateProductRequest product);
 
-    List<ProductDto> getAllProducts(Pageable pageable, Long id, String name, String search);
+    PagedResponse<ProductDto> getAllProducts(Pageable pageable, Long id, String name, String search);
 
     ProductDto getProductById(Long id);
 
@@ -18,15 +19,15 @@ public interface ProductService {
 
     ProductDto updateProductById(UpdateProductRequest productRequest, Long productId);
 
-    List<ProductDto> getProductsByCategory(Long categoryId);
+    PagedResponse<ProductDto> getProductsByCategory(Long categoryId, Pageable pageable);
 
-    List<ProductDto> getProductsByBrand(String brand);
+    PagedResponse<ProductDto> getProductsByBrand(String brand, Pageable pageable);
 
-    List<ProductDto> getProductsByCategoryAndBrand(String category, String brand);
+    PagedResponse<ProductDto> getProductsByCategoryAndBrand(String category, String brand, Pageable pageable);
 
-    List<ProductDto> getProductByName(String name);
+    PagedResponse<ProductDto> getProductByName(String name, Pageable pageable);
 
-    List<ProductDto> getProductsByBrandAndName(String brand, String name);
+    PagedResponse<ProductDto> getProductsByBrandAndName(String brand, String name, Pageable pageable);
 
     Long countProductsByBrandAndName(String brand, String name);
 }

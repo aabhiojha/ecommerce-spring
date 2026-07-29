@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import dev.abhishek.ecommerce.common.dto.PagedResponse;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -35,11 +36,9 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public ProductDto addProduct(CreateProductRequest createProductRequest) {
-        log.info("The provided createProductRequest object: {}", createProductRequest);
 
         // resolving category
-        int categoryId = createProductRequest.getCategory_id();
-        Category category = categoryRepository.findById((long) categoryId)
+        Category category = categoryRepository.findById(createProductRequest.getCategory_id())
                 .orElseThrow(
                         () -> {
                             log.warn("Category not found with id: {}", createProductRequest.getCategory_id());
@@ -51,7 +50,6 @@ public class ProductServiceImpl implements ProductService {
 
         Product productEntity = productMapper.toEntity(createProductRequest, category);
         productEntity.setSeller(user);
-        log.debug("The product entity is: {}", productEntity);
 
         // create product entry
         Product saved = productRepository.save(productEntity);
@@ -60,13 +58,15 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public List<ProductDto> getAllProducts(Pageable pageable, Long id, String name, String description) {
+    @Transactional(readOnly = true)
+    public PagedResponse<ProductDto> getAllProducts(Pageable pageable, Long id, String name, String description) {
         Specification<Product> specification = ProductSpecification.getSpecification(id, name, description);
-        return productMapper.toDtoList(productRepository.findAll(specification, pageable).getContent());
-
+        Page<Product> page = productRepository.findAll(specification, pageable);
+        return new PagedResponse<>(productMapper.toDtoList(page.getContent()), page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isLast());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ProductDto getProductById(Long id) {
         Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
         log.info("Retrieved product id={} name={}", product.getId(), product.getName());
@@ -74,25 +74,27 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public void deleteProductById(Long id) {
-        Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
+        // A seller may only delete their own products.
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Product product = productRepository.findByIdAndSeller(id, user)
+                .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + id));
         productRepository.delete(product);
+        log.info("Product with id {} deleted", id);
     }
 
     @Override
     @Transactional
     public ProductDto updateProductById(UpdateProductRequest updateRequest, Long productId) {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        log.info("User fetched: {}", user.toString());
         Product product = productRepository.findByIdAndSeller(productId, user)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found with id: " + productId));
-        log.info("Product of user: {} fetched: {}", user.toString(), product.toString());
 
         Category category = null;
         if (updateRequest.getCategory_id() != null) {
             category = categoryRepository.findById(updateRequest.getCategory_id())
                     .orElseThrow(() -> new CategoryNotFoundException("Category not found with id: " + updateRequest.getCategory_id()));
-            log.info("Category of user: {} fetched: {}", user.toString(), category.toString());
         }
         // this will update the productEntity to reflect the changes in the request
         productMapper.updateEntityFromRequest(updateRequest, product, category);
@@ -104,33 +106,38 @@ public class ProductServiceImpl implements ProductService {
 
 
     @Override
-    public List<ProductDto> getProductsByCategory(Long categoryId) {
-        List<Product> allByCategoryId = productRepository.findAllByCategory_Id(categoryId);
-        return productMapper.toDtoList(allByCategoryId);
+    @Transactional(readOnly = true)
+    public PagedResponse<ProductDto> getProductsByCategory(Long categoryId, Pageable pageable) {
+        Page<Product> page = productRepository.findAllByCategory_Id(categoryId, pageable);
+        return new PagedResponse<>(productMapper.toDtoList(page.getContent()), page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isLast());
     }
 
     @Override
-    public List<ProductDto> getProductsByBrand(String brand) {
-        List<Product> allByBrandIgnoreCase = productRepository.findAllByBrandIgnoreCase(brand);
-        return productMapper.toDtoList(allByBrandIgnoreCase);
+    @Transactional(readOnly = true)
+    public PagedResponse<ProductDto> getProductsByBrand(String brand, Pageable pageable) {
+        Page<Product> page = productRepository.findAllByBrandIgnoreCase(brand, pageable);
+        return new PagedResponse<>(productMapper.toDtoList(page.getContent()), page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isLast());
     }
 
     @Override
-    public List<ProductDto> getProductsByCategoryAndBrand(String category, String brand) {
-        List<Product> products = productRepository.findAllByCategory_NameIgnoreCaseAndBrandIgnoreCase(category, brand);
-        return productMapper.toDtoList(products);
+    @Transactional(readOnly = true)
+    public PagedResponse<ProductDto> getProductsByCategoryAndBrand(String category, String brand, Pageable pageable) {
+        Page<Product> page = productRepository.findAllByCategory_NameIgnoreCaseAndBrandIgnoreCase(category, brand, pageable);
+        return new PagedResponse<>(productMapper.toDtoList(page.getContent()), page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isLast());
     }
 
     @Override
-    public List<ProductDto> getProductByName(String name) {
-        List<Product> products = productRepository.findByNameIgnoreCase(name);
-        return productMapper.toDtoList(products);
+    @Transactional(readOnly = true)
+    public PagedResponse<ProductDto> getProductByName(String name, Pageable pageable) {
+        Page<Product> page = productRepository.findByNameIgnoreCase(name, pageable);
+        return new PagedResponse<>(productMapper.toDtoList(page.getContent()), page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isLast());
     }
 
     @Override
-    public List<ProductDto> getProductsByBrandAndName(String brand, String name) {
-        List<Product> products = productRepository.findAllByBrandContainingIgnoreCaseAndNameContainingIgnoreCase(brand, name);
-        return productMapper.toDtoList(products);
+    @Transactional(readOnly = true)
+    public PagedResponse<ProductDto> getProductsByBrandAndName(String brand, String name, Pageable pageable) {
+        Page<Product> page = productRepository.findAllByBrandContainingIgnoreCaseAndNameContainingIgnoreCase(brand, name, pageable);
+        return new PagedResponse<>(productMapper.toDtoList(page.getContent()), page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages(), page.isLast());
     }
 
     @Override

@@ -1,11 +1,12 @@
 package dev.abhishek.ecommerce.modules.product.dto;
 
 import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Positive;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
@@ -13,6 +14,8 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class UpdateProductRequest {
 
     private String name;
@@ -23,7 +26,8 @@ public class UpdateProductRequest {
     @DecimalMax("99999999")
     private BigDecimal price;
 
-    private Integer inventory;
+    @PositiveOrZero
+    private Long inventory;
 
     private String description;
 
