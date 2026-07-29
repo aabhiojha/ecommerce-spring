@@ -524,3 +524,172 @@ WHERE u.user_name = 'admin1'
                   FROM users_roles ur
                   WHERE ur.user_id = u.id
                     AND ur.role_id = r.role_id);
+
+
+-- ---------------------------------------------------------------------------
+-- Product images
+-- ---------------------------------------------------------------------------
+-- Two images per product. The URLs point at a public placeholder service
+-- rather than at RustFS, because the seed cannot upload objects into the
+-- bucket: the app stores download_url verbatim and hands it back, so seeded
+-- products still render. Swap the CONCAT prefix for storage.public-url once
+-- real assets are uploaded.
+
+INSERT INTO images (file_name, file_type, download_url, product_id)
+SELECT CONCAT(LOWER(REPLACE(REPLACE(p.name, ' ', '-'), '&', 'and')), '-1.jpg'),
+       'image/jpeg',
+       CONCAT('https://picsum.photos/seed/', p.id, '-1/800/800'),
+       p.id
+FROM products p
+WHERE NOT EXISTS (SELECT 1
+                  FROM images i
+                  WHERE i.product_id = p.id
+                    AND i.file_name = CONCAT(LOWER(REPLACE(REPLACE(p.name, ' ', '-'), '&', 'and')), '-1.jpg'));
+
+INSERT INTO images (file_name, file_type, download_url, product_id)
+SELECT CONCAT(LOWER(REPLACE(REPLACE(p.name, ' ', '-'), '&', 'and')), '-2.jpg'),
+       'image/jpeg',
+       CONCAT('https://picsum.photos/seed/', p.id, '-2/800/800'),
+       p.id
+FROM products p
+WHERE NOT EXISTS (SELECT 1
+                  FROM images i
+                  WHERE i.product_id = p.id
+                    AND i.file_name = CONCAT(LOWER(REPLACE(REPLACE(p.name, ' ', '-'), '&', 'and')), '-2.jpg'));
+
+-- ---------------------------------------------------------------------------
+-- Reviews
+-- ---------------------------------------------------------------------------
+-- Ratings are spread across 1..5 so average-rating and sort-by-rating
+-- responses are not all identical. (user_id, product_id) is unique, so each
+-- customer reviews a given product at most once.
+
+INSERT INTO reviews (product_id, user_id, review_message, rating, created_at, updated_at)
+SELECT p.id, u.id, r.message, r.rating, NOW(6), NOW(6)
+FROM (SELECT 'Wireless Noise Cancelling Headphones' AS product_name, 'customer1' AS user_name, 5 AS rating,
+             'Noise cancellation is excellent on flights and the battery easily lasts a week.' AS message
+      UNION ALL
+      SELECT 'Wireless Noise Cancelling Headphones', 'customer2', 4,
+             'Great sound, but the earcups get warm after a couple of hours.'
+      UNION ALL
+      SELECT 'Smart Fitness Watch', 'customer1', 4,
+             'Sleep tracking is accurate. The companion app could use some work.'
+      UNION ALL
+      SELECT 'Smart Fitness Watch', 'customer2', 3,
+             'Does the job, but the heart-rate sensor drifts during interval training.'
+      UNION ALL
+      SELECT 'Classic Cotton Hoodie', 'customer1', 5,
+             'Heavier than expected in the best way. Holds its shape after several washes.'
+      UNION ALL
+      SELECT 'Non-Stick Cookware Set', 'customer2', 2,
+             'The coating started flaking on the small pan within two months.'
+      UNION ALL
+      SELECT 'Everyday Running Shoes', 'customer1', 4,
+             'Comfortable for daily 5k runs. Sizing runs about half a size small.'
+      UNION ALL
+      SELECT 'Everyday Running Shoes', 'customer2', 5,
+             'Light, breathable and no break-in period at all.'
+      UNION ALL
+      SELECT 'Clean Code Companion', 'customer1', 5,
+             'The refactoring chapters alone were worth the price.'
+      UNION ALL
+      SELECT 'Portable Bluetooth Speaker', 'customer2', 4,
+             'Bass is surprisingly deep for the size. Pairing is instant.'
+      UNION ALL
+      SELECT 'Mechanical Gaming Keyboard', 'customer1', 5,
+             'Tactile switches feel great and the wrist rest is genuinely useful.'
+      UNION ALL
+      SELECT 'USB-C Fast Charger', 'customer2', 1,
+             'Stopped charging entirely after three weeks of daily use.'
+      UNION ALL
+      SELECT 'Air Fryer Oven', 'customer1', 4,
+             'Presets are accurate and cleanup is easy. Takes up a lot of counter space.'
+      UNION ALL
+      SELECT 'Adjustable Dumbbell Set', 'customer2', 5,
+             'Replaced an entire rack of weights in a small apartment.'
+      UNION ALL
+      SELECT 'Insulated Water Bottle', 'customer1', 3,
+             'Keeps drinks cold as advertised, but the lid is awkward to clean.'
+      UNION ALL
+      SELECT 'Compact Yoga Mat', 'customer2', 4,
+             'Good grip even during hot yoga. Slight rubber smell for the first week.') r
+         JOIN products p ON p.name = r.product_name
+         JOIN users u ON u.user_name = r.user_name
+WHERE NOT EXISTS (SELECT 1
+                  FROM reviews rv
+                  WHERE rv.product_id = p.id
+                    AND rv.user_id = u.id);
+
+-- ---------------------------------------------------------------------------
+-- Carts
+-- ---------------------------------------------------------------------------
+-- Both customers get a cart so GET /api/cart returns something on a fresh
+-- database; carts.user_id is unique, so this is one row per customer.
+
+INSERT INTO carts (user_id, created_at, updated_at)
+SELECT u.id, NOW(6), NOW(6)
+FROM users u
+WHERE u.user_name IN ('customer1', 'customer2')
+  AND NOT EXISTS (SELECT 1 FROM carts c WHERE c.user_id = u.id);
+
+INSERT INTO cart_items (cart_id, product_id, quantity)
+SELECT c.id, p.id, ci.quantity
+FROM (SELECT 'customer1' AS user_name, 'Mechanical Gaming Keyboard' AS product_name, 1 AS quantity
+      UNION ALL
+      SELECT 'customer1', 'USB-C Fast Charger', 2
+      UNION ALL
+      SELECT 'customer1', 'Insulated Water Bottle', 1
+      UNION ALL
+      SELECT 'customer2', 'Ceramic Dinner Set', 1
+      UNION ALL
+      SELECT 'customer2', 'Bamboo Cutting Board Set', 3) ci
+         JOIN users u ON u.user_name = ci.user_name
+         JOIN carts c ON c.user_id = u.id
+         JOIN products p ON p.name = ci.product_name
+WHERE NOT EXISTS (SELECT 1
+                  FROM cart_items existing
+                  WHERE existing.cart_id = c.id
+                    AND existing.product_id = p.id);
+
+-- ---------------------------------------------------------------------------
+-- Orders
+-- ---------------------------------------------------------------------------
+-- orders.id is binary(16), so the UUIDs are written with UNHEX/REPLACE. They
+-- are fixed rather than generated, both to keep the seed idempotent and so
+-- GET /api/orders/{id} has a stable id to demo against.
+--
+-- Three orders covering distinct states: one DELIVERED (cannot be cancelled),
+-- one PLACED (can be), and one CANCELLED.
+
+INSERT INTO orders (id, user_id, total_price, status, created_at, updated_at)
+SELECT UNHEX(REPLACE(o.id, '-', '')), u.id, o.total_price, o.status,
+       NOW(6) - INTERVAL o.days_ago DAY, NOW(6) - INTERVAL o.days_ago DAY
+FROM (SELECT '11111111-1111-4111-8111-111111111111' AS id, 'customer1' AS user_name,
+             249.98 AS total_price, 'DELIVERED' AS status, 21 AS days_ago
+      UNION ALL
+      SELECT '22222222-2222-4222-8222-222222222222', 'customer1', 109.00, 'PLACED', 2
+      UNION ALL
+      SELECT '33333333-3333-4333-8333-333333333333', 'customer2', 159.99, 'CANCELLED', 9) o
+         JOIN users u ON u.user_name = o.user_name
+WHERE NOT EXISTS (SELECT 1 FROM orders existing WHERE existing.id = UNHEX(REPLACE(o.id, '-', '')));
+
+-- price_at_purchase and the product_* columns are snapshots: they keep their
+-- historical values even when the product is later renamed or repriced.
+INSERT INTO order_items (order_id, product_id, quantity, price_at_purchase,
+                         product_name, product_brand, product_description, product_image)
+SELECT UNHEX(REPLACE(oi.order_id, '-', '')), p.id, oi.quantity, oi.price_at_purchase,
+       p.name, p.brand, p.description,
+       (SELECT i.download_url FROM images i WHERE i.product_id = p.id ORDER BY i.id LIMIT 1)
+FROM (SELECT '11111111-1111-4111-8111-111111111111' AS order_id,
+             'Wireless Noise Cancelling Headphones' AS product_name, 1 AS quantity, 199.99 AS price_at_purchase
+      UNION ALL
+      SELECT '11111111-1111-4111-8111-111111111111', 'Insulated Water Bottle', 2, 24.99
+      UNION ALL
+      SELECT '22222222-2222-4222-8222-222222222222', 'Mechanical Gaming Keyboard', 1, 109.00
+      UNION ALL
+      SELECT '33333333-3333-4333-8333-333333333333', 'Air Fryer Oven', 1, 159.99) oi
+         JOIN products p ON p.name = oi.product_name
+WHERE NOT EXISTS (SELECT 1
+                  FROM order_items existing
+                  WHERE existing.order_id = UNHEX(REPLACE(oi.order_id, '-', ''))
+                    AND existing.product_id = p.id);
