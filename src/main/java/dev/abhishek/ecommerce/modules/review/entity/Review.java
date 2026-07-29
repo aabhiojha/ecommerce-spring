@@ -1,6 +1,6 @@
 package dev.abhishek.ecommerce.modules.review.entity;
 
-import dev.abhishek.ecommerce.modules.Image.entity.Image;
+import dev.abhishek.ecommerce.modules.image.entity.Image;
 import dev.abhishek.ecommerce.modules.order.entity.Order;
 import dev.abhishek.ecommerce.modules.product.entity.Product;
 import dev.abhishek.ecommerce.modules.user.model.User;
