@@ -4,19 +4,21 @@ import dev.abhishek.ecommerce.modules.category.dtos.CategoryDto;
 import dev.abhishek.ecommerce.modules.category.dtos.CreateCategoryRequest;
 import dev.abhishek.ecommerce.modules.category.dtos.UpdateCategoryRequest;
 
+import dev.abhishek.ecommerce.common.dto.PagedResponse;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface CategoryService {
 
-    void createCategory(CreateCategoryRequest createCategoryRequest);
+    CategoryDto createCategory(CreateCategoryRequest createCategoryRequest);
 
-    List<CategoryDto> getAllCategories();
+    PagedResponse<CategoryDto> getAllCategories(Pageable pageable);
 
     CategoryDto getCategoryById(Long id);
 
     CategoryDto getCategoryByName(String name);
 
-    void updateCategoryById(Long id, UpdateCategoryRequest updateCategoryRequest);
+    CategoryDto updateCategoryById(Long id, UpdateCategoryRequest updateCategoryRequest);
 
-
+    void deleteCategory(Long id);
 }

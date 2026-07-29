@@ -1,7 +1,11 @@
 package dev.abhishek.ecommerce.modules.category.dtos;
 
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
@@ -10,7 +14,6 @@ import lombok.*;
 @AllArgsConstructor
 public class UpdateCategoryRequest {
 
-    @NotNull
+    @NotBlank
     private String name;
-
 }
