@@ -1,8 +1,13 @@
 package dev.abhishek.ecommerce.common.mail;
 
-import jakarta.mail.MessagingException;
+import java.util.Map;
 
 public interface EmailService {
+
     void sendPlainText(String to, String subject, String body);
-    void sendHtml(String to, String subject, String htmlBody) throws MessagingException;
+
+    /**
+     * Renders {@code templateName} from /templates, substituting {{placeholders}} from {@code model}.
+     */
+    void sendHtml(String to, String subject, String templateName, Map<String, String> model);
 }
