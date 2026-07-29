@@ -1,6 +1,6 @@
 package dev.abhishek.ecommerce.modules.cart.mapper;
 
-import dev.abhishek.ecommerce.modules.Image.entity.Image;
+import dev.abhishek.ecommerce.modules.image.entity.Image;
 import dev.abhishek.ecommerce.modules.cart.dto.cart.CartDto;
 import dev.abhishek.ecommerce.modules.cart.dto.cartItem.CartItemDto;
 import dev.abhishek.ecommerce.modules.cart.entity.Cart;
