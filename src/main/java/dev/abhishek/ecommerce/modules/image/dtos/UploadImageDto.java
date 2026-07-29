@@ -1,6 +1,5 @@
-package dev.abhishek.ecommerce.modules.Image.dtos;
+package dev.abhishek.ecommerce.modules.image.dtos;
 
-import jakarta.persistence.SecondaryTable;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.Getter;

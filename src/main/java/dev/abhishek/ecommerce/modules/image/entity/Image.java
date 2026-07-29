@@ -1,10 +1,9 @@
-package dev.abhishek.ecommerce.modules.Image.entity;
+package dev.abhishek.ecommerce.modules.image.entity;
 
 import dev.abhishek.ecommerce.modules.product.entity.Product;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.sql.Blob;
 
 @Getter
 @Setter

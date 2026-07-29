@@ -1,8 +1,8 @@
-package dev.abhishek.ecommerce.modules.Image.mapper;
+package dev.abhishek.ecommerce.modules.image.mapper;
 
-import dev.abhishek.ecommerce.modules.Image.dtos.ImageDto;
-import dev.abhishek.ecommerce.modules.Image.dtos.UploadImageDto;
-import dev.abhishek.ecommerce.modules.Image.entity.Image;
+import dev.abhishek.ecommerce.modules.image.dtos.ImageDto;
+import dev.abhishek.ecommerce.modules.image.dtos.UploadImageDto;
+import dev.abhishek.ecommerce.modules.image.entity.Image;
 import dev.abhishek.ecommerce.modules.product.entity.Product;
 
 import java.util.List;
