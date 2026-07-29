@@ -40,8 +40,12 @@ paths:
               password: secret123
               email: alice@example.com
       responses:
-        '200':
-          description: Registered successfully. The response body is empty.
+        '201':
+          description: Registered successfully; the response contains a JWT for immediate use.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -89,8 +93,10 @@ paths:
             example:
               email: alice@example.com
       responses:
-        '200':
-          description: Password reset request accepted. The response body is empty.
+        '202':
+          description: >-
+            Request accepted. Answered identically whether or not the address is registered,
+            so it cannot be used to discover accounts.
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -113,6 +119,8 @@ paths:
       responses:
         '200':
           description: Password was updated successfully. The response body is empty.
+        '400':
+          description: The reset code is unknown, already used, or expired.
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -261,7 +269,11 @@ paths:
               name: Electronics
       responses:
         '201':
-          description: Category created successfully. The response body is empty.
+          description: Category created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryDto'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -271,6 +283,29 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
   /api/categories/{id}:
+    get:
+      tags: [Categories]
+      summary: Get a category by id
+      operationId: getCategoryById
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Category details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryDto'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     put:
       tags: [Categories]
       summary: Update a category
@@ -294,7 +329,11 @@ paths:
               name: Updated Category
       responses:
         '200':
-          description: Category updated successfully. The response body is empty.
+          description: Category updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryDto'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -319,8 +358,8 @@ paths:
             type: integer
             format: int64
       responses:
-        '200':
-          description: Category deleted successfully. The response body is empty.
+        '204':
+          description: Category deleted successfully.
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -353,7 +392,8 @@ paths:
           required: false
           schema:
             type: string
-            default: Id
+            default: id
+            enum: [id, name, brand, price, inventory, createdAt, updatedAt]
         - name: sortDir
           in: query
           required: false
@@ -377,20 +417,6 @@ paths:
           required: false
           schema:
             type: string
-        - name: seller_id
-          in: query
-          required: false
-          schema:
-            type: integer
-            format: int64
-          description: Accepted by the controller but currently not applied in the service filter.
-        - name: category_id
-          in: query
-          required: false
-          schema:
-            type: integer
-            format: int64
-          description: Accepted by the controller but currently not applied in the service filter.
       responses:
         '200':
           description: A list of products.
@@ -490,13 +516,33 @@ paths:
           $ref: '#/components/responses/NotFoundText'
         '500':
           $ref: '#/components/responses/InternalServerError'
-  /api/images:
-    get:
-      tags: [Images]
-      summary: List all uploaded images
-      operationId: listImages
+    delete:
+      tags: [Products]
+      summary: Delete one of your own products
+      operationId: deleteProduct
       security:
         - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ProductIdPath'
+      responses:
+        '204':
+          description: Product deleted successfully.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/images/product/{productId}:
+    get:
+      tags: [Images]
+      summary: List the images of a product
+      operationId: listProductImages
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ProductIdPath'
       responses:
         '200':
           description: A list of images.
@@ -506,10 +552,31 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ImageDto'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  /api/images/{imageId}:
+    delete:
+      tags: [Images]
+      summary: Delete an image from one of your own products
+      operationId: deleteImage
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: imageId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Image deleted successfully.
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFoundText'
         '500':
           $ref: '#/components/responses/InternalServerError'
   /api/images/upload:
@@ -529,13 +596,14 @@ paths:
               file:
                 contentType: application/octet-stream
       responses:
-        '200':
+        '201':
           description: Image uploaded successfully.
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
-              example: Uploaded successfully
+                $ref: '#/components/schemas/ImageDto'
+        '413':
+          description: The uploaded file exceeds the configured maximum size.
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -561,7 +629,7 @@ paths:
               files:
                 contentType: application/octet-stream
       responses:
-        '200':
+        '201':
           description: Images uploaded successfully.
           content:
             application/json:
@@ -613,7 +681,7 @@ paths:
               productId: 10
               quantity: 2
       responses:
-        '200':
+        '201':
           description: Cart item created or updated.
           content:
             application/json:
@@ -703,7 +771,11 @@ paths:
               quantity: 4
       responses:
         '200':
-          description: Cart item updated successfully. The response body is empty.
+          description: Cart item updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartItemDto'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -723,8 +795,8 @@ paths:
       parameters:
         - $ref: '#/components/parameters/CartItemIdPath'
       responses:
-        '200':
-          description: Cart item deleted successfully. The response body is empty.
+        '204':
+          description: Cart item deleted successfully.
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -856,7 +928,11 @@ paths:
             $ref: '#/components/schemas/StatusChoice'
       responses:
         '200':
-          description: Order status updated successfully. The response body is empty.
+          description: Order status updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDto'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -1317,6 +1393,7 @@ components:
           type: number
         inventory:
           type: integer
+          format: int64
         description:
           type: string
         category_id:
@@ -1337,10 +1414,12 @@ components:
           type: number
         inventory:
           type: integer
+          format: int64
         description:
           type: string
         category_id:
           type: integer
+          format: int64
           format: int64
     ImageDto:
       type: object
@@ -1377,12 +1456,16 @@ components:
           type: number
         inventory:
           type: integer
+          format: int64
         description:
           type: string
         seller_id:
           type: integer
+          format: int64
         category_id:
           type: integer
+          format: int64
+          format: int64
         imageList:
           type: array
           items:
