@@ -50,14 +50,14 @@ public class StripeService {
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
     private final ObjectMapper objectMapper;
-
+    
     @Value("${stripe.secret.key:}")
     private String stripeSecretKey;
 
-    @Value("${stripe.checkout.success-url:http://localhost:8080/api/payments/checkout/success?session_id={CHECKOUT_SESSION_ID}}")
+    @Value("${stripe.checkout.success-url:http://localhost:3000/cart/success?session_id={CHECKOUT_SESSION_ID}")
     private String checkoutSuccessUrl;
 
-    @Value("${stripe.checkout.cancel-url:http://localhost:8080/api/payments/checkout/cancel}")
+    @Value("${stripe.checkout.cancel-url:http://localhost:3000/api/payments/checkout/cancel}")
     private String checkoutCancelUrl;
 
     @Transactional
