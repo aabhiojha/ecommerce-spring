@@ -7,6 +7,7 @@ import dev.abhishek.ecommerce.modules.cart.dto.cart.CartDto;
 import dev.abhishek.ecommerce.modules.cart.dto.cart.CartSummaryDto;
 import dev.abhishek.ecommerce.modules.cart.dto.cart.CartValidationDto;
 import dev.abhishek.ecommerce.modules.cart.dto.cart.CartValidationItemDto;
+import dev.abhishek.ecommerce.modules.cart.dto.cart.CalculateCartRequest;
 import dev.abhishek.ecommerce.modules.cart.dto.cartItem.AddCartItemRequest;
 import dev.abhishek.ecommerce.modules.cart.dto.cartItem.CartItemDto;
 import dev.abhishek.ecommerce.modules.cart.dto.cartItem.UpdateCartItemRequest;
@@ -153,6 +154,39 @@ public class CartServiceImpl implements CartService {
         return CartValidationDto.builder()
                 .valid(issues.isEmpty())
                 .issues(issues)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CartSummaryDto calculateSelectedCartItems(CalculateCartRequest request) {
+        User user = getUser();
+        Cart cart = getUserCart(user);
+
+        List<CartItem> selectedItems = cart.getCartItems().stream()
+                .filter(item -> request.getCartItemIds().contains(item.getId()))
+                .toList();
+
+        if (selectedItems.isEmpty()) {
+            return CartSummaryDto.builder()
+                    .cartId(cart.getId())
+                    .totalItems(0L)
+                    .totalPrice(BigDecimal.ZERO)
+                    .build();
+        }
+
+        long totalItems = selectedItems.stream()
+                .mapToLong(CartItem::getQuantity)
+                .sum();
+
+        BigDecimal totalPrice = selectedItems.stream()
+                .map(item -> item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return CartSummaryDto.builder()
+                .cartId(cart.getId())
+                .totalItems(totalItems)
+                .totalPrice(totalPrice)
                 .build();
     }
 

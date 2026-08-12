@@ -3,6 +3,7 @@ package dev.abhishek.ecommerce.modules.cart.controller;
 import dev.abhishek.ecommerce.modules.cart.dto.cart.CartDto;
 import dev.abhishek.ecommerce.modules.cart.dto.cart.CartSummaryDto;
 import dev.abhishek.ecommerce.modules.cart.dto.cart.CartValidationDto;
+import dev.abhishek.ecommerce.modules.cart.dto.cart.CalculateCartRequest;
 import dev.abhishek.ecommerce.modules.cart.dto.cartItem.AddCartItemRequest;
 import dev.abhishek.ecommerce.modules.cart.dto.cartItem.CartItemDto;
 import dev.abhishek.ecommerce.modules.cart.dto.cartItem.UpdateCartItemRequest;
@@ -80,5 +81,11 @@ public class CartController {
     @PostMapping("/validate")
     public ResponseEntity<CartValidationDto> validateCart() {
         return ResponseEntity.ok(cartService.validateCart());
+    }
+
+    @Operation(summary = "Calculate selected items", description = "Calculates total quantity and price for selected cart items")
+    @PostMapping("/calculate")
+    public ResponseEntity<CartSummaryDto> calculateSelectedCartItems(@Valid @RequestBody CalculateCartRequest request) {
+        return ResponseEntity.ok(cartService.calculateSelectedCartItems(request));
     }
 }

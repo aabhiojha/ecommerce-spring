@@ -3,6 +3,7 @@ package dev.abhishek.ecommerce.modules.cart.service;
 import dev.abhishek.ecommerce.modules.cart.dto.cart.CartDto;
 import dev.abhishek.ecommerce.modules.cart.dto.cart.CartSummaryDto;
 import dev.abhishek.ecommerce.modules.cart.dto.cart.CartValidationDto;
+import dev.abhishek.ecommerce.modules.cart.dto.cart.CalculateCartRequest;
 import dev.abhishek.ecommerce.modules.cart.dto.cartItem.AddCartItemRequest;
 import dev.abhishek.ecommerce.modules.cart.dto.cartItem.CartItemDto;
 import dev.abhishek.ecommerce.modules.cart.dto.cartItem.UpdateCartItemRequest;
@@ -22,4 +23,6 @@ public interface CartService {
     void clearCart();
 
     CartValidationDto validateCart();
+
+    CartSummaryDto calculateSelectedCartItems(CalculateCartRequest request);
 }
