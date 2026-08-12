@@ -11,8 +11,10 @@ import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Paths;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import org.springdoc.core.customizers.OpenApiCustomizer;
+import org.springdoc.core.customizers.OperationCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.Map;
 
@@ -23,7 +25,7 @@ import java.util.Map;
                         name = "Abhishek",
                         email = "aabhiojha08@outlook.com"
                 ),
-                description = "OpenAPI definition for the ecommerce application.",
+                description = "OpenAPI definition for the ecommerce application.<br><br><b>System Roles:</b><br>- <b>CUSTOMER:</b> Regular user who can browse products, add them to cart, and place orders.<br>- <b>SELLER:</b> User who can add, update, and manage their own products and related images.<br>- <b>ADMIN:</b> Administrator who can manage categories, users, and overall system configuration.",
                 title = "Ecommerce api"
         )
 )
@@ -89,5 +91,31 @@ public class OpenApiConfig {
         }
 
         return true;
+    }
+
+    @Bean
+    public OperationCustomizer customizeOperations() {
+        return (operation, handlerMethod) -> {
+            PreAuthorize preAuthorize = handlerMethod.getMethodAnnotation(PreAuthorize.class);
+            if (preAuthorize == null) {
+                preAuthorize = handlerMethod.getBeanType().getAnnotation(PreAuthorize.class);
+            }
+            
+            if (preAuthorize != null) {
+                String expression = preAuthorize.value();
+                String roles = "";
+                if (expression.contains("hasRole")) {
+                    roles = expression.replaceAll(".*hasRole\\('([^']+)'\\).*", "$1");
+                } else if (expression.contains("hasAnyRole")) {
+                    roles = expression.replaceAll(".*hasAnyRole\\(([^)]+)\\).*", "$1").replace("'", "");
+                }
+                
+                if (!roles.isEmpty()) {
+                    String existingDescription = operation.getDescription() != null ? operation.getDescription() : "";
+                    operation.setDescription(existingDescription + "<br><br><b>Allowed Roles:</b> " + roles);
+                }
+            }
+            return operation;
+        };
     }
 }
